@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, ChangeEvent, FormEvent } from "react";
 
 interface LineItem {
   description: string;
@@ -17,19 +17,14 @@ export default function InvoiceForm() {
   const handleItemChange = (
     index: number,
     field: keyof LineItem,
-    value: string | number
+    value: string
   ) => {
-    const newItems = [...lineItems];
-    const updatedItem = { ...newItems[index] };
-
-    if (field === "description") {
-      updatedItem[field] = value as string;
-    } else {
-      updatedItem[field] = Number(value) as number;
-    }
-
-    newItems[index] = updatedItem;
-    setLineItems(newItems);
+    const updatedItems = [...lineItems];
+    updatedItems[index] = {
+      ...updatedItems[index],
+      [field]: field === "description" ? value : Number(value),
+    };
+    setLineItems(updatedItems);
   };
 
   const addLineItem = () => {
@@ -40,8 +35,7 @@ export default function InvoiceForm() {
   };
 
   const removeLineItem = (index: number) => {
-    const newItems = lineItems.filter((_, i) => i !== index);
-    setLineItems(newItems);
+    setLineItems(lineItems.filter((_, i) => i !== index));
   };
 
   const subtotal = lineItems.reduce(
@@ -51,28 +45,22 @@ export default function InvoiceForm() {
 
   const total = subtotal * (1 + tva / 100);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    const data = {
-      freelancer,
-      client,
-      lineItems,
-      tva,
-      total,
-    };
+    const data = { freelancer, client, lineItems, tva, total };
     console.log("Facture générée :", data);
-    // TODO: envoyer au backend
+    // TODO : envoyer au backend
   };
 
   return (
     <form
       onSubmit={handleSubmit}
-      className="max-w-2xl mx-auto p-4 space-y-4 bg-white shadow rounded"
+      className="max-w-3xl mx-auto p-4 space-y-4 bg-zinc-900 text-white"
     >
       <h2 className="text-xl font-bold">Nouvelle facture</h2>
 
       <input
-        className="w-full border p-2 rounded"
+        className="w-full border p-2 rounded bg-zinc-800"
         placeholder="Nom du freelance"
         value={freelancer}
         onChange={(e) => setFreelancer(e.target.value)}
@@ -80,7 +68,7 @@ export default function InvoiceForm() {
       />
 
       <input
-        className="w-full border p-2 rounded"
+        className="w-full border p-2 rounded bg-zinc-800"
         placeholder="Nom du client"
         value={client}
         onChange={(e) => setClient(e.target.value)}
@@ -92,7 +80,7 @@ export default function InvoiceForm() {
         {lineItems.map((item, index) => (
           <div key={index} className="flex gap-2">
             <input
-              className="flex-1 border p-2 rounded"
+              className="flex-1 border p-2 rounded bg-zinc-800"
               placeholder="Description"
               value={item.description}
               onChange={(e) =>
@@ -101,59 +89,65 @@ export default function InvoiceForm() {
             />
             <input
               type="number"
-              className="w-24 border p-2 rounded"
+              className="w-24 border p-2 rounded bg-zinc-800"
               placeholder="Quantité"
               value={item.quantity}
               onChange={(e) =>
                 handleItemChange(index, "quantity", e.target.value)
               }
+              step="1"
+              min="1"
             />
             <input
               type="number"
-              step="0.01"
-              className="w-28 border p-2 rounded"
+              className="w-28 border p-2 rounded bg-zinc-800"
               placeholder="Prix unitaire"
               value={item.unitPrice}
               onChange={(e) =>
                 handleItemChange(index, "unitPrice", e.target.value)
               }
+              step="0.01"
+              min="0"
             />
             <button
               type="button"
               onClick={() => removeLineItem(index)}
-              className="text-red-600 font-bold"
+              className="text-red-500 font-bold"
             >
               ✕
             </button>
           </div>
         ))}
-        <button
-          type="button"
-          onClick={addLineItem}
-          className="text-blue-600 font-semibold"
-        >
-          + Ajouter une ligne
-        </button>
       </div>
 
-      <div className="space-y-2">
-        <label className="block">TVA (%)</label>
+      <button
+        type="button"
+        onClick={addLineItem}
+        className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+      >
+        + Ajouter une prestation
+      </button>
+
+      <div className="pt-4">
+        <label className="block mb-1">TVA (%)</label>
         <input
           type="number"
           value={tva}
           onChange={(e) => setTva(Number(e.target.value))}
-          className="w-24 border p-2 rounded"
+          className="w-24 border p-2 rounded bg-zinc-800"
         />
       </div>
 
-      <div className="space-y-1">
-        <p>Sous-total : {subtotal.toFixed(2)} €</p>
-        <p>Total (avec TVA) : {total.toFixed(2)} €</p>
+      <div className="pt-4">
+        <p className="text-lg">Total HT : {subtotal.toFixed(2)} €</p>
+        <p className="text-lg font-semibold">
+          Total TTC : {total.toFixed(2)} €
+        </p>
       </div>
 
       <button
         type="submit"
-        className="bg-blue-600 text-white px-4 py-2 rounded"
+        className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded"
       >
         Générer la facture
       </button>

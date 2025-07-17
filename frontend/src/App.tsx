@@ -1,7 +1,9 @@
+import InvoiceForm from "./components/InvoiceForm";
+
 function App() {
   return (
-    <div className="flex items-center justify-center h-screen bg-gray-100">
-      <h1 className="text-3xl font-bold text-blue-600">Facturly est prêt !</h1>
+    <div className="min-h-screen bg-gray-100 p-6">
+      <InvoiceForm />
     </div>
   );
 }
