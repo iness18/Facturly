@@ -45,11 +45,40 @@ export default function InvoiceForm() {
 
   const total = subtotal * (1 + tva / 100);
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const data = { freelancer, client, lineItems, tva, total };
-    console.log("Facture générée :", data);
-    // TODO : envoyer au backend
+
+    const data = {
+      freelancer,
+      client,
+      lineItems,
+      tva,
+      total,
+    };
+
+    try {
+      const response = await fetch(
+        "http://localhost:5000/api/invoices/generate",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(data),
+        }
+      );
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "facture.pdf";
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Erreur lors de l'envoi du formulaire :", error);
+    }
   };
 
   return (

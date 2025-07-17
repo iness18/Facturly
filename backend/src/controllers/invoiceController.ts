@@ -3,16 +3,16 @@ import { createInvoicePdf } from "../utils/pdfGenerator";
 
 export const generateInvoice = async (req: Request, res: Response) => {
   try {
-    const invoiceData = req.body;
-    const pdfBuffer = await createInvoicePdf(invoiceData);
+    const pdfBuffer = await createInvoicePdf(req.body);
 
     res.set({
       "Content-Type": "application/pdf",
-      "Content-Disposition": "attachment; filename=invoice.pdf",
+      "Content-Disposition": "attachment; filename=facture.pdf",
     });
 
     res.send(pdfBuffer);
   } catch (error) {
-    res.status(500).json({ message: "Failed to generate invoice", error });
+    console.error("Erreur lors de la génération de la facture :", error);
+    res.status(500).send("Erreur lors de la génération de la facture.");
   }
 };
