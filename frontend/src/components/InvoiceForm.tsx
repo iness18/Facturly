@@ -20,8 +20,15 @@ export default function InvoiceForm() {
     value: string | number
   ) => {
     const newItems = [...lineItems];
-    newItems[index][field] =
-      field === "description" ? (value as string) : Number(value);
+    const updatedItem = { ...newItems[index] };
+
+    if (field === "description") {
+      updatedItem[field] = value as string;
+    } else {
+      updatedItem[field] = Number(value) as number;
+    }
+
+    newItems[index] = updatedItem;
     setLineItems(newItems);
   };
 
@@ -41,6 +48,7 @@ export default function InvoiceForm() {
     (sum, item) => sum + item.quantity * item.unitPrice,
     0
   );
+
   const total = subtotal * (1 + tva / 100);
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -52,8 +60,8 @@ export default function InvoiceForm() {
       tva,
       total,
     };
-    console.log("Facture générée:", data);
-    // TODO: envoyer au backend ici
+    console.log("Facture générée :", data);
+    // TODO: envoyer au backend
   };
 
   return (
@@ -99,17 +107,16 @@ export default function InvoiceForm() {
               onChange={(e) =>
                 handleItemChange(index, "quantity", e.target.value)
               }
-              min={1}
             />
             <input
               type="number"
+              step="0.01"
               className="w-28 border p-2 rounded"
               placeholder="Prix unitaire"
               value={item.unitPrice}
               onChange={(e) =>
                 handleItemChange(index, "unitPrice", e.target.value)
               }
-              step="0.01"
             />
             <button
               type="button"
@@ -123,29 +130,30 @@ export default function InvoiceForm() {
         <button
           type="button"
           onClick={addLineItem}
-          className="text-blue-600 font-medium"
+          className="text-blue-600 font-semibold"
         >
           + Ajouter une ligne
         </button>
       </div>
 
-      <div className="flex gap-2 items-center">
-        <label className="font-semibold">TVA (%) :</label>
+      <div className="space-y-2">
+        <label className="block">TVA (%)</label>
         <input
           type="number"
           value={tva}
           onChange={(e) => setTva(Number(e.target.value))}
-          className="w-20 border p-2 rounded"
+          className="w-24 border p-2 rounded"
         />
       </div>
 
-      <div className="text-right font-bold">
-        Total TTC : {total.toFixed(2)} €
+      <div className="space-y-1">
+        <p>Sous-total : {subtotal.toFixed(2)} €</p>
+        <p>Total (avec TVA) : {total.toFixed(2)} €</p>
       </div>
 
       <button
         type="submit"
-        className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
+        className="bg-blue-600 text-white px-4 py-2 rounded"
       >
         Générer la facture
       </button>
