@@ -8,15 +8,16 @@ services:
       dockerfile: Dockerfile
     container_name: facturly_backend
     ports:
-      - "3001:3000" # Port du backend exposé sur 3001
+      - "3001:3000"
     depends_on:
       db:
-        condition: service_healthy # Attend que la DB soit prête
+        condition: service_healthy
     environment:
       - DATABASE_URL=${DATABASE_URL}
     volumes:
       - ./backend:/app
       - /app/node_modules
+    command: npm run start:dev
     networks:
       - facturly_net
 
@@ -27,12 +28,15 @@ services:
       dockerfile: Dockerfile
     container_name: facturly_frontend
     ports:
-      - "3000:3000" # Port du frontend exposé sur 3000
+      - "3000:3000"
     depends_on:
       - backend
     volumes:
       - ./frontend:/app
       - /app/node_modules
+      - /app/.next # <-- LIGNE IMPORTANTE : préserve le dossier .next du conteneur
+    # ON CHANGE LA COMMANDE DE DÉMARRAGE ICI
+    command: npm run dev
     networks:
       - facturly_net
 

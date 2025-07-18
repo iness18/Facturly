@@ -2,32 +2,31 @@
 FROM node:18-alpine AS deps
 WORKDIR /app
 COPY package.json yarn.lock* package-lock.json* pnpm-lock.yaml* ./
-RUN \
-  if [ -f yarn.lock ]; then yarn --frozen-lockfile; \
-  elif [ -f package-lock.json ]; then npm ci; \
-  elif [ -f pnpm-lock.yaml ]; then yarn global add pnpm && pnpm i --frozen-lockfile; \
-  else echo "Lockfile not found." && exit 1; \
-  fi
+RUN npm ci
 
 # Étape 2: Build de l'application
 FROM node:18-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-# La variable NEXT_PUBLIC_API_URL sera passée en argument au build si nécessaire
+# S'assurer que la configuration de next est bien présente pour le build
+COPY next.config.ts .
 RUN npm run build
 
-# Étape 3: Image finale pour l'exécution
+# Étape 3: Image finale pour l'exécution (Approche plus robuste)
 FROM node:18-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
-# Copie des fichiers buildés depuis l'étape précédente
+
+# On copie d'abord TOUTES les dépendances de production
+COPY --from=deps /app/package.json ./package.json
+RUN npm install --omit=dev
+
+# Ensuite, on copie les fichiers buildés par-dessus
 COPY --from=builder /app/public ./public
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/next.config.ts ./next.config.ts
 
+# La commande de démarrage standard de Next.js en production
 EXPOSE 3000
-ENV PORT=3000
-
-# La commande finale pour lancer le serveur Next.js optimisé
-CMD ["node", "server.js"]
+CMD ["npm", "start"]
