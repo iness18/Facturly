@@ -1,7 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import {
+  storageService,
+  formatDate,
+  formatCurrency,
+  type RecentTask,
+} from "@/utils/storage";
 
 // Composant Card réutilisable
 const Card = ({
@@ -488,6 +494,62 @@ const StatCards = ({
   onInvoicesClick: () => void;
   onClientsClick: () => void;
 }) => {
+  const [stats, setStats] = useState({
+    revenue: 0,
+    pendingInvoices: 0,
+    pendingAmount: 0,
+    clients: 0,
+  });
+
+  // Charger les statistiques au montage du composant
+  useEffect(() => {
+    const loadStats = () => {
+      const invoiceStats = storageService.getInvoiceStats();
+      const invoices = storageService.getInvoices();
+
+      // Calculer le chiffre d'affaires des 30 derniers jours
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+      const recentRevenue = invoices
+        .filter((invoice) => {
+          const invoiceDate = new Date(invoice.date);
+          return invoiceDate >= thirtyDaysAgo && invoice.status === "paid";
+        })
+        .reduce((sum, invoice) => sum + parseFloat(invoice.amount), 0);
+
+      // Calculer les factures en attente
+      const pendingInvoices = invoices.filter(
+        (invoice) => invoice.status === "sent" || invoice.status === "overdue"
+      );
+
+      const pendingAmount = pendingInvoices.reduce(
+        (sum, invoice) => sum + parseFloat(invoice.amount),
+        0
+      );
+
+      // Calculer le nombre de clients uniques
+      const uniqueClients = new Set(invoices.map((invoice) => invoice.client))
+        .size;
+
+      setStats({
+        revenue: recentRevenue,
+        pendingInvoices: pendingInvoices.length,
+        pendingAmount: pendingAmount,
+        clients: uniqueClients,
+      });
+    };
+
+    loadStats();
+
+    // Écouter les changements de localStorage
+    const handleStorageChange = () => {
+      loadStats();
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
   return (
     <div
       style={{
@@ -541,18 +603,18 @@ const StatCards = ({
             marginBottom: "8px",
           }}
         >
-          1,250.00 €
+          {formatCurrency(stats.revenue)}
         </div>
         <div
           style={{
             fontSize: "13px",
-            color: "#10b981",
+            color: stats.revenue > 0 ? "#10b981" : "#9ca3af",
             display: "flex",
             alignItems: "center",
             gap: "4px",
           }}
         >
-          ↗️ +12.5% vs mois dernier
+          {stats.revenue > 0 ? "💰 Revenus générés" : "Aucun revenu ce mois"}
         </div>
       </Card>
 
@@ -600,18 +662,19 @@ const StatCards = ({
             marginBottom: "8px",
           }}
         >
-          3 factures
+          {stats.pendingInvoices} facture
+          {stats.pendingInvoices !== 1 ? "s" : ""}
         </div>
         <div
           style={{
             fontSize: "13px",
-            color: "#f59e0b",
+            color: stats.pendingInvoices > 0 ? "#f59e0b" : "#9ca3af",
             display: "flex",
             alignItems: "center",
             gap: "4px",
           }}
         >
-          💶 450.00 € en attente
+          💶 {formatCurrency(stats.pendingAmount)} en attente
         </div>
       </Card>
 
@@ -659,18 +722,18 @@ const StatCards = ({
             marginBottom: "8px",
           }}
         >
-          12
+          {stats.clients}
         </div>
         <div
           style={{
             fontSize: "13px",
-            color: "#8b5cf6",
+            color: stats.clients > 0 ? "#8b5cf6" : "#9ca3af",
             display: "flex",
             alignItems: "center",
             gap: "4px",
           }}
         >
-          📈 +2 ce mois-ci
+          {stats.clients > 0 ? "👥 Clients uniques" : "Aucun client"}
         </div>
       </Card>
     </div>
@@ -679,45 +742,45 @@ const StatCards = ({
 
 // Composant RecentActivityFeed
 const RecentActivityFeed = () => {
-  const [hasActivity] = useState(false); // Pour tester l'état vide/rempli
+  const [recentTasks, setRecentTasks] = useState<RecentTask[]>([]);
 
-  const activities = [
-    {
-      id: 1,
-      type: "invoice_created",
-      message: "Facture #2024-012 créée",
-      time: "Il y a 2h",
-      icon: "📄",
-    },
-    {
-      id: 2,
-      type: "payment_received",
-      message: "Paiement de 50€ reçu de Client X",
-      time: "Il y a 4h",
-      icon: "💳",
-    },
-    {
-      id: 3,
-      type: "invoice_sent",
-      message: "Facture #2024-011 envoyée à ABC Corp",
-      time: "Il y a 1j",
-      icon: "📧",
-    },
-    {
-      id: 4,
-      type: "client_added",
-      message: 'Nouveau client "XYZ Sarl" ajouté',
-      time: "Il y a 2j",
-      icon: "👤",
-    },
-    {
-      id: 5,
-      type: "payment_received",
-      message: "Paiement de 150€ reçu de DEF Ltd",
-      time: "Il y a 3j",
-      icon: "💳",
-    },
-  ];
+  // Charger les tâches récentes au montage du composant
+  useEffect(() => {
+    const loadRecentTasks = () => {
+      const tasks = storageService.getRecentTasks();
+      setRecentTasks(tasks);
+    };
+
+    loadRecentTasks();
+
+    // Écouter les changements de localStorage (si plusieurs onglets)
+    const handleStorageChange = () => {
+      loadRecentTasks();
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
+
+  // Fonction pour formater le temps relatif
+  const getRelativeTime = (dateString: string) => {
+    const now = new Date();
+    const date = new Date(dateString);
+    const diffInMs = now.getTime() - date.getTime();
+    const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+
+    if (diffInMinutes < 60) {
+      return diffInMinutes <= 1 ? "À l'instant" : `Il y a ${diffInMinutes}min`;
+    } else if (diffInHours < 24) {
+      return `Il y a ${diffInHours}h`;
+    } else {
+      return `Il y a ${diffInDays}j`;
+    }
+  };
+
+  const hasActivity = recentTasks.length > 0;
 
   return (
     <Card style={{ minHeight: "350px" }}>
@@ -823,9 +886,9 @@ const RecentActivityFeed = () => {
             gap: "12px",
           }}
         >
-          {activities.map((activity) => (
+          {recentTasks.map((task) => (
             <div
-              key={activity.id}
+              key={task.id}
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -849,7 +912,7 @@ const RecentActivityFeed = () => {
                   flexShrink: 0,
                 }}
               >
-                {activity.icon}
+                {task.icon}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <p
@@ -863,7 +926,7 @@ const RecentActivityFeed = () => {
                     whiteSpace: "nowrap",
                   }}
                 >
-                  {activity.message}
+                  {task.title}
                 </p>
                 <p
                   style={{
@@ -872,7 +935,7 @@ const RecentActivityFeed = () => {
                     margin: 0,
                   }}
                 >
-                  {activity.time}
+                  {getRelativeTime(task.date)}
                 </p>
               </div>
             </div>
@@ -999,6 +1062,16 @@ export default function DashboardPage() {
             >
               Clients
             </a>
+            <a
+              href="/dashboard/agenda"
+              style={{
+                color: "#d1d5db",
+                textDecoration: "none",
+                fontSize: "14px",
+              }}
+            >
+              Agenda
+            </a>
           </div>
 
           {/* Actions */}
@@ -1096,6 +1169,16 @@ export default function DashboardPage() {
                 }}
               >
                 Clients
+              </a>
+              <a
+                href="/dashboard/agenda"
+                style={{
+                  color: "#d1d5db",
+                  textDecoration: "none",
+                  padding: "8px 0",
+                }}
+              >
+                Agenda
               </a>
             </div>
           </div>

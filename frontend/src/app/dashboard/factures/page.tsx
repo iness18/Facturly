@@ -1,7 +1,15 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import {
+  storageService,
+  formatDate,
+  formatCurrency,
+  type Invoice,
+} from "@/utils/storage";
+import StatusSelect from "@/components/StatusSelect";
+import InvoiceDetailsModalComponent from "@/components/InvoiceDetailsModal";
 
 // Composant Card réutilisable
 const Card = ({
@@ -24,767 +32,6 @@ const Card = ({
       }}
     >
       {children}
-    </div>
-  );
-};
-
-// Composant Modal de création de facture
-const CreateInvoiceModal = ({
-  isOpen,
-  onClose,
-  onInvoiceCreated,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-  onInvoiceCreated: (invoice: any) => void;
-}) => {
-  const [formData, setFormData] = useState({
-    client: "",
-    clientEmail: "",
-    description: "",
-    amount: "",
-    dueDate: "",
-    notes: "",
-  });
-
-  const handleInputChange = (field: string, value: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
-    // Créer une nouvelle facture
-    const newInvoice = {
-      id: Date.now(), // ID temporaire basé sur timestamp
-      number: `FAC-2024-${String(Date.now()).slice(-3)}`,
-      client: formData.client,
-      date: new Date().toLocaleDateString("fr-FR"),
-      amount: `${parseFloat(formData.amount).toFixed(2)} €`,
-      status: "draft",
-    };
-
-    // Ajouter la facture à la liste
-    onInvoiceCreated(newInvoice);
-
-    console.log("Nouvelle facture créée:", newInvoice);
-    onClose();
-
-    // Reset form
-    setFormData({
-      client: "",
-      clientEmail: "",
-      description: "",
-      amount: "",
-      dueDate: "",
-      notes: "",
-    });
-  };
-
-  if (!isOpen) return null;
-
-  return (
-    <div
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        background: "rgba(0, 0, 0, 0.7)",
-        backdropFilter: "blur(5px)",
-        zIndex: 1000,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "20px",
-      }}
-    >
-      <div
-        style={{
-          background:
-            "linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #16213e 100%)",
-          border: "1px solid rgba(255, 255, 255, 0.2)",
-          borderRadius: "20px",
-          padding: "32px",
-          maxWidth: "600px",
-          width: "100%",
-          maxHeight: "90vh",
-          overflowY: "auto",
-          position: "relative",
-        }}
-      >
-        {/* Header */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: "24px",
-          }}
-        >
-          <h2
-            style={{
-              fontSize: "24px",
-              fontWeight: "bold",
-              color: "#ffffff",
-              margin: 0,
-            }}
-          >
-            Nouvelle Facture
-          </h2>
-          <button
-            onClick={onClose}
-            style={{
-              background: "rgba(255, 255, 255, 0.1)",
-              border: "1px solid rgba(255, 255, 255, 0.2)",
-              borderRadius: "50%",
-              width: "40px",
-              height: "40px",
-              color: "#ffffff",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "18px",
-            }}
-          >
-            ✕
-          </button>
-        </div>
-
-        {/* Form */}
-        <form onSubmit={handleSubmit}>
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "20px",
-            }}
-          >
-            {/* Informations client */}
-            <div>
-              <h3
-                style={{
-                  fontSize: "16px",
-                  fontWeight: "600",
-                  color: "#ffffff",
-                  marginBottom: "16px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                }}
-              >
-                👤 Informations Client
-              </h3>
-
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
-                  gap: "16px",
-                }}
-              >
-                <div>
-                  <label
-                    style={{
-                      display: "block",
-                      fontSize: "14px",
-                      fontWeight: "600",
-                      color: "#9ca3af",
-                      marginBottom: "6px",
-                    }}
-                  >
-                    Nom du client *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.client}
-                    onChange={(e) =>
-                      handleInputChange("client", e.target.value)
-                    }
-                    placeholder="Ex: ABC Corporation"
-                    style={{
-                      width: "100%",
-                      padding: "12px 16px",
-                      background: "rgba(255, 255, 255, 0.05)",
-                      border: "1px solid rgba(255, 255, 255, 0.2)",
-                      borderRadius: "8px",
-                      color: "#ffffff",
-                      fontSize: "14px",
-                      outline: "none",
-                    }}
-                  />
-                </div>
-
-                <div>
-                  <label
-                    style={{
-                      display: "block",
-                      fontSize: "14px",
-                      fontWeight: "600",
-                      color: "#9ca3af",
-                      marginBottom: "6px",
-                    }}
-                  >
-                    Email du client *
-                  </label>
-                  <input
-                    type="email"
-                    required
-                    value={formData.clientEmail}
-                    onChange={(e) =>
-                      handleInputChange("clientEmail", e.target.value)
-                    }
-                    placeholder="client@example.com"
-                    style={{
-                      width: "100%",
-                      padding: "12px 16px",
-                      background: "rgba(255, 255, 255, 0.05)",
-                      border: "1px solid rgba(255, 255, 255, 0.2)",
-                      borderRadius: "8px",
-                      color: "#ffffff",
-                      fontSize: "14px",
-                      outline: "none",
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Détails de la facture */}
-            <div>
-              <h3
-                style={{
-                  fontSize: "16px",
-                  fontWeight: "600",
-                  color: "#ffffff",
-                  marginBottom: "16px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                }}
-              >
-                📄 Détails de la Facture
-              </h3>
-
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "16px",
-                }}
-              >
-                <div>
-                  <label
-                    style={{
-                      display: "block",
-                      fontSize: "14px",
-                      fontWeight: "600",
-                      color: "#9ca3af",
-                      marginBottom: "6px",
-                    }}
-                  >
-                    Description des services *
-                  </label>
-                  <textarea
-                    required
-                    value={formData.description}
-                    onChange={(e) =>
-                      handleInputChange("description", e.target.value)
-                    }
-                    placeholder="Décrivez les services ou produits facturés..."
-                    rows={3}
-                    style={{
-                      width: "100%",
-                      padding: "12px 16px",
-                      background: "rgba(255, 255, 255, 0.05)",
-                      border: "1px solid rgba(255, 255, 255, 0.2)",
-                      borderRadius: "8px",
-                      color: "#ffffff",
-                      fontSize: "14px",
-                      outline: "none",
-                      resize: "vertical",
-                      fontFamily: "inherit",
-                    }}
-                  />
-                </div>
-
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-                    gap: "16px",
-                  }}
-                >
-                  <div>
-                    <label
-                      style={{
-                        display: "block",
-                        fontSize: "14px",
-                        fontWeight: "600",
-                        color: "#9ca3af",
-                        marginBottom: "6px",
-                      }}
-                    >
-                      Montant (€) *
-                    </label>
-                    <input
-                      type="number"
-                      required
-                      min="0"
-                      step="0.01"
-                      value={formData.amount}
-                      onChange={(e) =>
-                        handleInputChange("amount", e.target.value)
-                      }
-                      placeholder="0.00"
-                      style={{
-                        width: "100%",
-                        padding: "12px 16px",
-                        background: "rgba(255, 255, 255, 0.05)",
-                        border: "1px solid rgba(255, 255, 255, 0.2)",
-                        borderRadius: "8px",
-                        color: "#ffffff",
-                        fontSize: "14px",
-                        outline: "none",
-                      }}
-                    />
-                  </div>
-
-                  <div>
-                    <label
-                      style={{
-                        display: "block",
-                        fontSize: "14px",
-                        fontWeight: "600",
-                        color: "#9ca3af",
-                        marginBottom: "6px",
-                      }}
-                    >
-                      Date d'échéance *
-                    </label>
-                    <input
-                      type="date"
-                      required
-                      value={formData.dueDate}
-                      onChange={(e) =>
-                        handleInputChange("dueDate", e.target.value)
-                      }
-                      style={{
-                        width: "100%",
-                        padding: "12px 16px",
-                        background: "rgba(255, 255, 255, 0.05)",
-                        border: "1px solid rgba(255, 255, 255, 0.2)",
-                        borderRadius: "8px",
-                        color: "#ffffff",
-                        fontSize: "14px",
-                        outline: "none",
-                      }}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label
-                    style={{
-                      display: "block",
-                      fontSize: "14px",
-                      fontWeight: "600",
-                      color: "#9ca3af",
-                      marginBottom: "6px",
-                    }}
-                  >
-                    Notes additionnelles
-                  </label>
-                  <textarea
-                    value={formData.notes}
-                    onChange={(e) => handleInputChange("notes", e.target.value)}
-                    placeholder="Conditions de paiement, notes spéciales..."
-                    rows={2}
-                    style={{
-                      width: "100%",
-                      padding: "12px 16px",
-                      background: "rgba(255, 255, 255, 0.05)",
-                      border: "1px solid rgba(255, 255, 255, 0.2)",
-                      borderRadius: "8px",
-                      color: "#ffffff",
-                      fontSize: "14px",
-                      outline: "none",
-                      resize: "vertical",
-                      fontFamily: "inherit",
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Boutons d'action */}
-            <div
-              style={{
-                display: "flex",
-                gap: "12px",
-                justifyContent: "flex-end",
-                paddingTop: "20px",
-                borderTop: "1px solid rgba(255, 255, 255, 0.1)",
-              }}
-            >
-              <button
-                type="button"
-                onClick={onClose}
-                style={{
-                  background: "rgba(255, 255, 255, 0.1)",
-                  border: "1px solid rgba(255, 255, 255, 0.2)",
-                  color: "#ffffff",
-                  padding: "10px 20px",
-                  borderRadius: "8px",
-                  fontSize: "14px",
-                  cursor: "pointer",
-                  transition: "all 0.2s ease",
-                }}
-              >
-                Annuler
-              </button>
-              <button
-                type="submit"
-                style={{
-                  background:
-                    "linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)",
-                  border: "none",
-                  color: "#ffffff",
-                  padding: "10px 20px",
-                  borderRadius: "8px",
-                  fontSize: "14px",
-                  fontWeight: "600",
-                  cursor: "pointer",
-                  transition: "all 0.2s ease",
-                }}
-              >
-                Créer la Facture
-              </button>
-            </div>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-};
-
-// Composant Modal de détails de facture
-const InvoiceDetailsModal = ({
-  isOpen,
-  onClose,
-  invoice,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-  invoice: any | null;
-}) => {
-  if (!isOpen || !invoice) return null;
-
-  return (
-    <div
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        background: "rgba(0, 0, 0, 0.7)",
-        backdropFilter: "blur(5px)",
-        zIndex: 1000,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "20px",
-      }}
-    >
-      <div
-        style={{
-          background:
-            "linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #16213e 100%)",
-          border: "1px solid rgba(255, 255, 255, 0.2)",
-          borderRadius: "20px",
-          padding: "32px",
-          maxWidth: "600px",
-          width: "100%",
-          maxHeight: "90vh",
-          overflowY: "auto",
-          position: "relative",
-        }}
-      >
-        {/* Header */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: "24px",
-          }}
-        >
-          <h2
-            style={{
-              fontSize: "24px",
-              fontWeight: "bold",
-              color: "#ffffff",
-              margin: 0,
-            }}
-          >
-            Détails de la Facture
-          </h2>
-          <button
-            onClick={onClose}
-            style={{
-              background: "rgba(255, 255, 255, 0.1)",
-              border: "1px solid rgba(255, 255, 255, 0.2)",
-              borderRadius: "50%",
-              width: "40px",
-              height: "40px",
-              color: "#ffffff",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "18px",
-            }}
-          >
-            ✕
-          </button>
-        </div>
-
-        {/* Contenu */}
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "24px",
-          }}
-        >
-          {/* Informations principales */}
-          <Card>
-            <h3
-              style={{
-                fontSize: "18px",
-                fontWeight: "600",
-                color: "#ffffff",
-                margin: 0,
-                marginBottom: "16px",
-              }}
-            >
-              📄 Informations Générales
-            </h3>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-                gap: "16px",
-              }}
-            >
-              <div>
-                <label
-                  style={{
-                    fontSize: "12px",
-                    color: "#9ca3af",
-                    textTransform: "uppercase",
-                    fontWeight: "600",
-                  }}
-                >
-                  Numéro de facture
-                </label>
-                <div
-                  style={{
-                    fontSize: "16px",
-                    color: "#ffffff",
-                    fontWeight: "600",
-                    marginTop: "4px",
-                  }}
-                >
-                  {invoice.number}
-                </div>
-              </div>
-              <div>
-                <label
-                  style={{
-                    fontSize: "12px",
-                    color: "#9ca3af",
-                    textTransform: "uppercase",
-                    fontWeight: "600",
-                  }}
-                >
-                  Date d'émission
-                </label>
-                <div
-                  style={{
-                    fontSize: "16px",
-                    color: "#ffffff",
-                    marginTop: "4px",
-                  }}
-                >
-                  {invoice.date}
-                </div>
-              </div>
-              <div>
-                <label
-                  style={{
-                    fontSize: "12px",
-                    color: "#9ca3af",
-                    textTransform: "uppercase",
-                    fontWeight: "600",
-                  }}
-                >
-                  Montant
-                </label>
-                <div
-                  style={{
-                    fontSize: "20px",
-                    color: "#10b981",
-                    fontWeight: "bold",
-                    marginTop: "4px",
-                  }}
-                >
-                  {invoice.amount}
-                </div>
-              </div>
-              <div>
-                <label
-                  style={{
-                    fontSize: "12px",
-                    color: "#9ca3af",
-                    textTransform: "uppercase",
-                    fontWeight: "600",
-                  }}
-                >
-                  Statut
-                </label>
-                <div style={{ marginTop: "4px" }}>
-                  <span
-                    style={{
-                      padding: "6px 12px",
-                      borderRadius: "8px",
-                      fontSize: "14px",
-                      fontWeight: "500",
-                      background:
-                        invoice.status === "paid"
-                          ? "#10b98120"
-                          : invoice.status === "sent"
-                          ? "#3b82f620"
-                          : invoice.status === "overdue"
-                          ? "#ef444420"
-                          : "#9ca3af20",
-                      color:
-                        invoice.status === "paid"
-                          ? "#10b981"
-                          : invoice.status === "sent"
-                          ? "#3b82f6"
-                          : invoice.status === "overdue"
-                          ? "#ef4444"
-                          : "#9ca3af",
-                      border: `1px solid ${
-                        invoice.status === "paid"
-                          ? "#10b98140"
-                          : invoice.status === "sent"
-                          ? "#3b82f640"
-                          : invoice.status === "overdue"
-                          ? "#ef444440"
-                          : "#9ca3af40"
-                      }`,
-                    }}
-                  >
-                    {invoice.status === "paid"
-                      ? "Payée"
-                      : invoice.status === "sent"
-                      ? "Envoyée"
-                      : invoice.status === "overdue"
-                      ? "En retard"
-                      : "Brouillon"}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </Card>
-
-          {/* Informations client */}
-          <Card>
-            <h3
-              style={{
-                fontSize: "18px",
-                fontWeight: "600",
-                color: "#ffffff",
-                margin: 0,
-                marginBottom: "16px",
-              }}
-            >
-              👤 Informations Client
-            </h3>
-            <div>
-              <label
-                style={{
-                  fontSize: "12px",
-                  color: "#9ca3af",
-                  textTransform: "uppercase",
-                  fontWeight: "600",
-                }}
-              >
-                Nom du client
-              </label>
-              <div
-                style={{
-                  fontSize: "16px",
-                  color: "#ffffff",
-                  fontWeight: "600",
-                  marginTop: "4px",
-                }}
-              >
-                {invoice.client}
-              </div>
-            </div>
-          </Card>
-
-          {/* Actions */}
-          <div
-            style={{
-              display: "flex",
-              gap: "12px",
-              justifyContent: "flex-end",
-              paddingTop: "20px",
-              borderTop: "1px solid rgba(255, 255, 255, 0.1)",
-            }}
-          >
-            <button
-              onClick={onClose}
-              style={{
-                background: "rgba(255, 255, 255, 0.1)",
-                border: "1px solid rgba(255, 255, 255, 0.2)",
-                color: "#ffffff",
-                padding: "10px 20px",
-                borderRadius: "8px",
-                fontSize: "14px",
-                cursor: "pointer",
-              }}
-            >
-              Fermer
-            </button>
-            <button
-              style={{
-                background: "linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)",
-                border: "none",
-                color: "#ffffff",
-                padding: "10px 20px",
-                borderRadius: "8px",
-                fontSize: "14px",
-                fontWeight: "600",
-                cursor: "pointer",
-              }}
-            >
-              📧 Envoyer par email
-            </button>
-          </div>
-        </div>
-      </div>
     </div>
   );
 };
@@ -975,8 +222,8 @@ const InvoiceFilters = ({
           >
             Gestion des Factures
           </h2>
-          <button
-            onClick={onCreateClick}
+          <a
+            href="/dashboard/factures/create"
             style={{
               background: "linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)",
               color: "#ffffff",
@@ -989,10 +236,11 @@ const InvoiceFilters = ({
               display: "flex",
               alignItems: "center",
               gap: "6px",
+              textDecoration: "none",
             }}
           >
             ➕ Nouvelle Facture
-          </button>
+          </a>
         </div>
 
         {/* Filtres */}
@@ -1049,58 +297,7 @@ const InvoiceFilters = ({
             >
               Statut
             </label>
-            <select
-              value={statusFilter}
-              onChange={(e) => onStatusChange(e.target.value)}
-              style={{
-                width: "100%",
-                padding: "8px 12px",
-                background: "rgba(255, 255, 255, 0.05)",
-                border: "1px solid rgba(255, 255, 255, 0.2)",
-                borderRadius: "6px",
-                color: "#ffffff",
-                fontSize: "14px",
-                outline: "none",
-                appearance: "none",
-                backgroundImage:
-                  'url(\'data:image/svg+xml;charset=US-ASCII,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4 5"><path fill="%23ffffff" d="M2 0L0 2h4zm0 5L0 3h4z"/></svg>\')',
-                backgroundRepeat: "no-repeat",
-                backgroundPosition: "right 8px center",
-                backgroundSize: "12px",
-                paddingRight: "32px",
-              }}
-            >
-              <option
-                value=""
-                style={{ background: "#1a1a2e", color: "#ffffff" }}
-              >
-                Tous les statuts
-              </option>
-              <option
-                value="draft"
-                style={{ background: "#1a1a2e", color: "#ffffff" }}
-              >
-                Brouillon
-              </option>
-              <option
-                value="sent"
-                style={{ background: "#1a1a2e", color: "#ffffff" }}
-              >
-                Envoyée
-              </option>
-              <option
-                value="paid"
-                style={{ background: "#1a1a2e", color: "#ffffff" }}
-              >
-                Payée
-              </option>
-              <option
-                value="overdue"
-                style={{ background: "#1a1a2e", color: "#ffffff" }}
-              >
-                En retard
-              </option>
-            </select>
+            <StatusSelect value={statusFilter} onChange={onStatusChange} />
           </div>
         </div>
       </div>
@@ -1210,7 +407,7 @@ const InvoiceRow = ({
           color: "#d1d5db",
         }}
       >
-        {invoice.date}
+        {formatDate(invoice.date)}
       </div>
 
       {/* Montant */}
@@ -1221,7 +418,7 @@ const InvoiceRow = ({
           color: "#ffffff",
         }}
       >
-        {invoice.amount}
+        {formatCurrency(parseFloat(invoice.amount))}
       </div>
 
       {/* Statut */}
@@ -1454,8 +651,8 @@ const InvoiceList = ({
           >
             Créez votre première facture pour commencer.
           </p>
-          <button
-            onClick={onCreateClick}
+          <a
+            href="/dashboard/factures/create"
             style={{
               background: "linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)",
               color: "#ffffff",
@@ -1465,10 +662,12 @@ const InvoiceList = ({
               fontSize: "14px",
               fontWeight: "600",
               cursor: "pointer",
+              textDecoration: "none",
+              display: "inline-block",
             }}
           >
             ➕ Créer une facture
-          </button>
+          </a>
         </div>
       </Card>
     );
@@ -1568,96 +767,81 @@ export default function FacturesPage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
   const router = useRouter();
 
-  // État pour les factures (maintenant dynamique)
-  const [allInvoices, setAllInvoices] = useState([
-    {
-      id: 1,
-      number: "FAC-2024-001",
-      client: "ABC Corporation",
-      date: "15/01/2024",
-      amount: "1,250.00 €",
-      status: "paid",
-    },
-    {
-      id: 2,
-      number: "FAC-2024-002",
-      client: "XYZ Sarl",
-      date: "18/01/2024",
-      amount: "750.00 €",
-      status: "sent",
-    },
-    {
-      id: 3,
-      number: "FAC-2024-003",
-      client: "DEF Ltd",
-      date: "20/01/2024",
-      amount: "2,100.00 €",
-      status: "overdue",
-    },
-    {
-      id: 4,
-      number: "FAC-2024-004",
-      client: "GHI Industries",
-      date: "22/01/2024",
-      amount: "450.00 €",
-      status: "draft",
-    },
-    {
-      id: 5,
-      number: "FAC-2024-005",
-      client: "JKL Services",
-      date: "25/01/2024",
-      amount: "890.00 €",
-      status: "paid",
-    },
-  ]);
+  // État pour les factures (chargées depuis le localStorage)
+  const [allInvoices, setAllInvoices] = useState<Invoice[]>([]);
+
+  // Charger les factures au montage du composant
+  useEffect(() => {
+    const loadInvoices = () => {
+      const invoices = storageService.getInvoices();
+      setAllInvoices(invoices);
+    };
+
+    loadInvoices();
+
+    // Écouter les changements de localStorage (si plusieurs onglets)
+    const handleStorageChange = () => {
+      loadInvoices();
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
 
   const handleProfileClick = () => {
     router.push("/dashboard/compte");
   };
 
-  const handleInvoiceCreated = (newInvoice: any) => {
-    setAllInvoices((prev) => [newInvoice, ...prev]); // Ajouter en début de liste
-  };
-
   // Fonctions de gestion des actions sur les factures
-  const handleViewDetails = (invoice: any) => {
+  const handleViewDetails = (invoice: Invoice) => {
     setSelectedInvoice(invoice);
     setIsDetailsModalOpen(true);
   };
 
-  const handleEdit = (invoice: any) => {
-    // Pour l'instant, on redirige vers une page d'édition (à créer)
-    router.push(`/dashboard/factures/edit/${invoice.id}`);
+  const handleEdit = (invoice: Invoice) => {
+    // Rediriger vers la page de création avec les données de la facture pour édition
+    router.push(`/dashboard/factures/create?edit=${invoice.id}`);
   };
 
-  const handleDuplicate = (invoice: any) => {
-    const duplicatedInvoice = {
+  const handleDuplicate = (invoice: Invoice) => {
+    const duplicatedInvoice: Invoice = {
       ...invoice,
-      id: Date.now(), // Nouvel ID
-      number: `FAC-2024-${String(Date.now()).slice(-3)}`, // Nouveau numéro
+      id: `invoice_${Date.now()}`, // Nouvel ID
+      number: `FACT-${new Date().getFullYear()}-${String(Date.now()).slice(
+        -4
+      )}`, // Nouveau numéro
       status: "draft", // Statut brouillon par défaut
-      date: new Date().toLocaleDateString("fr-FR"), // Date actuelle
+      date: new Date().toISOString().split("T")[0], // Date actuelle
+      createdAt: new Date().toISOString(),
     };
-    setAllInvoices((prev) => [duplicatedInvoice, ...prev]);
+
+    // Sauvegarder la facture dupliquée
+    storageService.saveInvoice(duplicatedInvoice);
+
+    // Recharger les factures
+    const invoices = storageService.getInvoices();
+    setAllInvoices(invoices);
   };
 
-  const handleDelete = (invoice: any) => {
+  const handleDelete = (invoice: Invoice) => {
     setSelectedInvoice(invoice);
     setIsDeleteModalOpen(true);
   };
 
   const confirmDelete = () => {
     if (selectedInvoice) {
-      setAllInvoices((prev) =>
-        prev.filter((inv) => inv.id !== selectedInvoice.id)
-      );
+      // Supprimer la facture du stockage
+      storageService.deleteInvoice(selectedInvoice.id);
+
+      // Recharger les factures
+      const invoices = storageService.getInvoices();
+      setAllInvoices(invoices);
+
       setIsDeleteModalOpen(false);
       setSelectedInvoice(null);
     }
@@ -1774,6 +958,16 @@ export default function FacturesPage() {
             >
               Clients
             </a>
+            <a
+              href="/dashboard/agenda"
+              style={{
+                color: "#d1d5db",
+                textDecoration: "none",
+                fontSize: "14px",
+              }}
+            >
+              Agenda
+            </a>
           </div>
 
           {/* Actions */}
@@ -1872,6 +1066,16 @@ export default function FacturesPage() {
               >
                 Clients
               </a>
+              <a
+                href="/dashboard/agenda"
+                style={{
+                  color: "#d1d5db",
+                  textDecoration: "none",
+                  padding: "8px 0",
+                }}
+              >
+                Agenda
+              </a>
             </div>
           </div>
         )}
@@ -1909,13 +1113,13 @@ export default function FacturesPage() {
           onSearchChange={setSearchTerm}
           statusFilter={statusFilter}
           onStatusChange={setStatusFilter}
-          onCreateClick={() => setIsCreateModalOpen(true)}
+          onCreateClick={() => router.push("/dashboard/factures/create")}
         />
 
         {/* Liste des factures */}
         <InvoiceList
           invoices={filteredInvoices}
-          onCreateClick={() => setIsCreateModalOpen(true)}
+          onCreateClick={() => router.push("/dashboard/factures/create")}
           onViewDetails={handleViewDetails}
           onEdit={handleEdit}
           onDuplicate={handleDuplicate}
@@ -1923,15 +1127,8 @@ export default function FacturesPage() {
         />
       </main>
 
-      {/* Modal de création de facture */}
-      <CreateInvoiceModal
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        onInvoiceCreated={handleInvoiceCreated}
-      />
-
       {/* Modal de détails de facture */}
-      <InvoiceDetailsModal
+      <InvoiceDetailsModalComponent
         isOpen={isDetailsModalOpen}
         onClose={() => {
           setIsDetailsModalOpen(false);

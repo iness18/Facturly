@@ -2,6 +2,13 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import {
+  storageService,
+  formatDate,
+  formatCurrency,
+  type Client,
+} from "@/utils/storage";
+import ClientDetailsModal from "@/components/ClientDetailsModal";
 
 // Composant Card réutilisable
 const Card = ({
@@ -24,428 +31,6 @@ const Card = ({
       }}
     >
       {children}
-    </div>
-  );
-};
-
-// Composant Modal de création de client
-const CreateClientModal = ({
-  isOpen,
-  onClose,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-}) => {
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    company: "",
-    address: "",
-    notes: "",
-  });
-
-  const handleInputChange = (field: string, value: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Ici on traiterait la création du client
-    console.log("Nouveau client:", formData);
-    onClose();
-    // Reset form
-    setFormData({
-      name: "",
-      email: "",
-      phone: "",
-      company: "",
-      address: "",
-      notes: "",
-    });
-  };
-
-  if (!isOpen) return null;
-
-  return (
-    <div
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        background: "rgba(0, 0, 0, 0.7)",
-        backdropFilter: "blur(5px)",
-        zIndex: 1000,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        padding: "20px",
-      }}
-    >
-      <div
-        style={{
-          background:
-            "linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #16213e 100%)",
-          border: "1px solid rgba(255, 255, 255, 0.2)",
-          borderRadius: "20px",
-          padding: "32px",
-          maxWidth: "600px",
-          width: "100%",
-          maxHeight: "90vh",
-          overflowY: "auto",
-          position: "relative",
-        }}
-      >
-        {/* Header */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: "24px",
-          }}
-        >
-          <h2
-            style={{
-              fontSize: "24px",
-              fontWeight: "bold",
-              color: "#ffffff",
-              margin: 0,
-            }}
-          >
-            Nouveau Client
-          </h2>
-          <button
-            onClick={onClose}
-            style={{
-              background: "rgba(255, 255, 255, 0.1)",
-              border: "1px solid rgba(255, 255, 255, 0.2)",
-              borderRadius: "50%",
-              width: "40px",
-              height: "40px",
-              color: "#ffffff",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "18px",
-            }}
-          >
-            ✕
-          </button>
-        </div>
-
-        {/* Form */}
-        <form onSubmit={handleSubmit}>
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "20px",
-            }}
-          >
-            {/* Informations de base */}
-            <div>
-              <h3
-                style={{
-                  fontSize: "16px",
-                  fontWeight: "600",
-                  color: "#ffffff",
-                  marginBottom: "16px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                }}
-              >
-                👤 Informations de Base
-              </h3>
-
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
-                  gap: "16px",
-                }}
-              >
-                <div>
-                  <label
-                    style={{
-                      display: "block",
-                      fontSize: "14px",
-                      fontWeight: "600",
-                      color: "#9ca3af",
-                      marginBottom: "6px",
-                    }}
-                  >
-                    Nom complet *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.name}
-                    onChange={(e) => handleInputChange("name", e.target.value)}
-                    placeholder="Ex: Jean Dupont"
-                    style={{
-                      width: "100%",
-                      padding: "12px 16px",
-                      background: "rgba(255, 255, 255, 0.05)",
-                      border: "1px solid rgba(255, 255, 255, 0.2)",
-                      borderRadius: "8px",
-                      color: "#ffffff",
-                      fontSize: "14px",
-                      outline: "none",
-                    }}
-                  />
-                </div>
-
-                <div>
-                  <label
-                    style={{
-                      display: "block",
-                      fontSize: "14px",
-                      fontWeight: "600",
-                      color: "#9ca3af",
-                      marginBottom: "6px",
-                    }}
-                  >
-                    Email *
-                  </label>
-                  <input
-                    type="email"
-                    required
-                    value={formData.email}
-                    onChange={(e) => handleInputChange("email", e.target.value)}
-                    placeholder="client@example.com"
-                    style={{
-                      width: "100%",
-                      padding: "12px 16px",
-                      background: "rgba(255, 255, 255, 0.05)",
-                      border: "1px solid rgba(255, 255, 255, 0.2)",
-                      borderRadius: "8px",
-                      color: "#ffffff",
-                      fontSize: "14px",
-                      outline: "none",
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Informations de contact */}
-            <div>
-              <h3
-                style={{
-                  fontSize: "16px",
-                  fontWeight: "600",
-                  color: "#ffffff",
-                  marginBottom: "16px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                }}
-              >
-                📞 Contact & Entreprise
-              </h3>
-
-              <div
-                style={{
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "16px",
-                }}
-              >
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-                    gap: "16px",
-                  }}
-                >
-                  <div>
-                    <label
-                      style={{
-                        display: "block",
-                        fontSize: "14px",
-                        fontWeight: "600",
-                        color: "#9ca3af",
-                        marginBottom: "6px",
-                      }}
-                    >
-                      Téléphone
-                    </label>
-                    <input
-                      type="tel"
-                      value={formData.phone}
-                      onChange={(e) =>
-                        handleInputChange("phone", e.target.value)
-                      }
-                      placeholder="06 12 34 56 78"
-                      style={{
-                        width: "100%",
-                        padding: "12px 16px",
-                        background: "rgba(255, 255, 255, 0.05)",
-                        border: "1px solid rgba(255, 255, 255, 0.2)",
-                        borderRadius: "8px",
-                        color: "#ffffff",
-                        fontSize: "14px",
-                        outline: "none",
-                      }}
-                    />
-                  </div>
-
-                  <div>
-                    <label
-                      style={{
-                        display: "block",
-                        fontSize: "14px",
-                        fontWeight: "600",
-                        color: "#9ca3af",
-                        marginBottom: "6px",
-                      }}
-                    >
-                      Entreprise
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.company}
-                      onChange={(e) =>
-                        handleInputChange("company", e.target.value)
-                      }
-                      placeholder="ABC Corporation"
-                      style={{
-                        width: "100%",
-                        padding: "12px 16px",
-                        background: "rgba(255, 255, 255, 0.05)",
-                        border: "1px solid rgba(255, 255, 255, 0.2)",
-                        borderRadius: "8px",
-                        color: "#ffffff",
-                        fontSize: "14px",
-                        outline: "none",
-                      }}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label
-                    style={{
-                      display: "block",
-                      fontSize: "14px",
-                      fontWeight: "600",
-                      color: "#9ca3af",
-                      marginBottom: "6px",
-                    }}
-                  >
-                    Adresse
-                  </label>
-                  <textarea
-                    value={formData.address}
-                    onChange={(e) =>
-                      handleInputChange("address", e.target.value)
-                    }
-                    placeholder="123 Rue de la Paix, 75001 Paris"
-                    rows={2}
-                    style={{
-                      width: "100%",
-                      padding: "12px 16px",
-                      background: "rgba(255, 255, 255, 0.05)",
-                      border: "1px solid rgba(255, 255, 255, 0.2)",
-                      borderRadius: "8px",
-                      color: "#ffffff",
-                      fontSize: "14px",
-                      outline: "none",
-                      resize: "vertical",
-                      fontFamily: "inherit",
-                    }}
-                  />
-                </div>
-
-                <div>
-                  <label
-                    style={{
-                      display: "block",
-                      fontSize: "14px",
-                      fontWeight: "600",
-                      color: "#9ca3af",
-                      marginBottom: "6px",
-                    }}
-                  >
-                    Notes
-                  </label>
-                  <textarea
-                    value={formData.notes}
-                    onChange={(e) => handleInputChange("notes", e.target.value)}
-                    placeholder="Informations supplémentaires..."
-                    rows={2}
-                    style={{
-                      width: "100%",
-                      padding: "12px 16px",
-                      background: "rgba(255, 255, 255, 0.05)",
-                      border: "1px solid rgba(255, 255, 255, 0.2)",
-                      borderRadius: "8px",
-                      color: "#ffffff",
-                      fontSize: "14px",
-                      outline: "none",
-                      resize: "vertical",
-                      fontFamily: "inherit",
-                    }}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Boutons d'action */}
-            <div
-              style={{
-                display: "flex",
-                gap: "12px",
-                justifyContent: "flex-end",
-                paddingTop: "20px",
-                borderTop: "1px solid rgba(255, 255, 255, 0.1)",
-              }}
-            >
-              <button
-                type="button"
-                onClick={onClose}
-                style={{
-                  background: "rgba(255, 255, 255, 0.1)",
-                  border: "1px solid rgba(255, 255, 255, 0.2)",
-                  color: "#ffffff",
-                  padding: "10px 20px",
-                  borderRadius: "8px",
-                  fontSize: "14px",
-                  cursor: "pointer",
-                  transition: "all 0.2s ease",
-                }}
-              >
-                Annuler
-              </button>
-              <button
-                type="submit"
-                style={{
-                  background:
-                    "linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)",
-                  border: "none",
-                  color: "#ffffff",
-                  padding: "10px 20px",
-                  borderRadius: "8px",
-                  fontSize: "14px",
-                  fontWeight: "600",
-                  cursor: "pointer",
-                  transition: "all 0.2s ease",
-                }}
-              >
-                Créer le Client
-              </button>
-            </div>
-          </div>
-        </form>
-      </div>
     </div>
   );
 };
@@ -489,8 +74,8 @@ const ClientFilters = ({
           >
             Gestion des Clients
           </h2>
-          <button
-            onClick={onCreateClick}
+          <a
+            href="/dashboard/clients/create"
             style={{
               background: "linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)",
               color: "#ffffff",
@@ -503,10 +88,11 @@ const ClientFilters = ({
               display: "flex",
               alignItems: "center",
               gap: "6px",
+              textDecoration: "none",
             }}
           >
             ➕ Nouveau Client
-          </button>
+          </a>
         </div>
 
         {/* Recherche */}
@@ -550,7 +136,17 @@ const ClientFilters = ({
 };
 
 // Composant pour une carte de client
-const ClientCard = ({ client }: { client: any }) => {
+const ClientCard = ({
+  client,
+  onViewDetails,
+  onEdit,
+  onDelete,
+}: {
+  client: Client;
+  onViewDetails: (client: Client) => void;
+  onEdit: (client: Client) => void;
+  onDelete: (client: Client) => void;
+}) => {
   return (
     <Card
       style={{
@@ -627,6 +223,7 @@ const ClientCard = ({ client }: { client: any }) => {
               }}
             >
               <button
+                onClick={() => onViewDetails(client)}
                 style={{
                   background: "rgba(255, 255, 255, 0.1)",
                   border: "1px solid rgba(255, 255, 255, 0.2)",
@@ -635,11 +232,19 @@ const ClientCard = ({ client }: { client: any }) => {
                   borderRadius: "6px",
                   fontSize: "12px",
                   cursor: "pointer",
+                  transition: "all 0.2s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "rgba(255, 255, 255, 0.2)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "rgba(255, 255, 255, 0.1)";
                 }}
               >
                 👁️
               </button>
               <button
+                onClick={() => onEdit(client)}
                 style={{
                   background: "rgba(255, 255, 255, 0.1)",
                   border: "1px solid rgba(255, 255, 255, 0.2)",
@@ -648,11 +253,19 @@ const ClientCard = ({ client }: { client: any }) => {
                   borderRadius: "6px",
                   fontSize: "12px",
                   cursor: "pointer",
+                  transition: "all 0.2s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "rgba(255, 255, 255, 0.2)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "rgba(255, 255, 255, 0.1)";
                 }}
               >
                 ✏️
               </button>
               <button
+                onClick={() => onDelete(client)}
                 style={{
                   background: "rgba(255, 255, 255, 0.1)",
                   border: "1px solid rgba(255, 255, 255, 0.2)",
@@ -661,9 +274,16 @@ const ClientCard = ({ client }: { client: any }) => {
                   borderRadius: "6px",
                   fontSize: "12px",
                   cursor: "pointer",
+                  transition: "all 0.2s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "rgba(255, 255, 255, 0.2)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "rgba(255, 255, 255, 0.1)";
                 }}
               >
-                ⋯
+                🗑️
               </button>
             </div>
           </div>
@@ -721,7 +341,7 @@ const ClientCard = ({ client }: { client: any }) => {
               }}
             >
               <span style={{ color: "#10b981", fontWeight: "600" }}>
-                {client.invoiceCount}
+                {client.invoiceCount || 0}
               </span>{" "}
               factures
             </div>
@@ -732,7 +352,7 @@ const ClientCard = ({ client }: { client: any }) => {
               }}
             >
               <span style={{ color: "#8b5cf6", fontWeight: "600" }}>
-                {client.totalAmount}
+                {formatCurrency(client.totalAmount || 0)}
               </span>{" "}
               total
             </div>
@@ -747,9 +367,15 @@ const ClientCard = ({ client }: { client: any }) => {
 const ClientList = ({
   clients,
   onCreateClick,
+  onViewDetails,
+  onEdit,
+  onDelete,
 }: {
-  clients: any[];
+  clients: Client[];
   onCreateClick: () => void;
+  onViewDetails: (client: Client) => void;
+  onEdit: (client: Client) => void;
+  onDelete: (client: Client) => void;
 }) => {
   if (clients.length === 0) {
     return (
@@ -819,7 +445,13 @@ const ClientList = ({
       }}
     >
       {clients.map((client) => (
-        <ClientCard key={client.id} client={client} />
+        <ClientCard
+          key={client.id}
+          client={client}
+          onViewDetails={onViewDetails}
+          onEdit={onEdit}
+          onDelete={onDelete}
+        />
       ))}
     </div>
   );
@@ -829,52 +461,53 @@ const ClientList = ({
 export default function ClientsPage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [allClients, setAllClients] = useState<Client[]>([]);
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
   const router = useRouter();
+
+  // Charger les clients au montage du composant
+  useEffect(() => {
+    const loadClients = () => {
+      const clients = storageService.getClients();
+      setAllClients(clients);
+    };
+
+    loadClients();
+
+    // Écouter les changements de localStorage (si plusieurs onglets)
+    const handleStorageChange = () => {
+      loadClients();
+    };
+
+    window.addEventListener("storage", handleStorageChange);
+    return () => window.removeEventListener("storage", handleStorageChange);
+  }, []);
 
   const handleProfileClick = () => {
     router.push("/dashboard/compte");
   };
 
-  // Données d'exemple
-  const allClients = [
-    {
-      id: 1,
-      name: "Jean Dupont",
-      email: "jean.dupont@abc-corp.com",
-      phone: "06 12 34 56 78",
-      company: "ABC Corporation",
-      invoiceCount: 5,
-      totalAmount: "2,450.00 €",
-    },
-    {
-      id: 2,
-      name: "Marie Martin",
-      email: "marie@xyz-sarl.fr",
-      phone: "06 98 76 54 32",
-      company: "XYZ Sarl",
-      invoiceCount: 3,
-      totalAmount: "1,750.00 €",
-    },
-    {
-      id: 3,
-      name: "Pierre Durand",
-      email: "p.durand@def-ltd.com",
-      phone: "",
-      company: "DEF Ltd",
-      invoiceCount: 8,
-      totalAmount: "4,200.00 €",
-    },
-    {
-      id: 4,
-      name: "Sophie Leroy",
-      email: "sophie.leroy@gmail.com",
-      phone: "06 11 22 33 44",
-      company: "",
-      invoiceCount: 2,
-      totalAmount: "890.00 €",
-    },
-  ];
+  // Fonctions de gestion des actions sur les clients
+  const handleViewDetails = (client: Client) => {
+    setSelectedClient(client);
+    setIsDetailsModalOpen(true);
+  };
+
+  const handleEdit = (client: Client) => {
+    router.push(`/dashboard/clients/create?edit=${client.id}`);
+  };
+
+  const handleDelete = (client: Client) => {
+    if (
+      confirm(`Êtes-vous sûr de vouloir supprimer le client ${client.name} ?`)
+    ) {
+      storageService.deleteClient(client.id);
+      // Recharger les clients
+      const clients = storageService.getClients();
+      setAllClients(clients);
+    }
+  };
 
   // Filtrage des clients
   const filteredClients = allClients.filter((client) => {
@@ -984,6 +617,16 @@ export default function ClientsPage() {
             >
               Clients
             </a>
+            <a
+              href="/dashboard/agenda"
+              style={{
+                color: "#d1d5db",
+                textDecoration: "none",
+                fontSize: "14px",
+              }}
+            >
+              Agenda
+            </a>
           </div>
 
           {/* Actions */}
@@ -1082,6 +725,16 @@ export default function ClientsPage() {
               >
                 Clients
               </a>
+              <a
+                href="/dashboard/agenda"
+                style={{
+                  color: "#d1d5db",
+                  textDecoration: "none",
+                  padding: "8px 0",
+                }}
+              >
+                Agenda
+              </a>
             </div>
           </div>
         )}
@@ -1117,20 +770,27 @@ export default function ClientsPage() {
         <ClientFilters
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
-          onCreateClick={() => setIsCreateModalOpen(true)}
+          onCreateClick={() => router.push("/dashboard/clients/create")}
         />
 
         {/* Liste des clients */}
         <ClientList
           clients={filteredClients}
-          onCreateClick={() => setIsCreateModalOpen(true)}
+          onCreateClick={() => router.push("/dashboard/clients/create")}
+          onViewDetails={handleViewDetails}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
         />
       </main>
 
-      {/* Modal de création de client */}
-      <CreateClientModal
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
+      {/* Modal de détails du client */}
+      <ClientDetailsModal
+        isOpen={isDetailsModalOpen}
+        onClose={() => {
+          setIsDetailsModalOpen(false);
+          setSelectedClient(null);
+        }}
+        client={selectedClient}
       />
 
       <style jsx>{`

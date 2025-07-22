@@ -14,6 +14,12 @@ interface FormData {
   phone: string;
   acceptTerms: boolean;
   acceptNewsletter: boolean;
+  // Nouvelles informations d'entreprise
+  companyAddress: string;
+  companyPostalCode: string;
+  companyCity: string;
+  companySiret: string;
+  companyLegalForm: string;
 }
 
 interface FormErrors {
@@ -23,6 +29,11 @@ interface FormErrors {
   password?: string;
   confirmPassword?: string;
   acceptTerms?: string;
+  company?: string;
+  companyAddress?: string;
+  companyPostalCode?: string;
+  companyCity?: string;
+  companySiret?: string;
 }
 
 export default function InscriptionPage() {
@@ -36,6 +47,12 @@ export default function InscriptionPage() {
     phone: "",
     acceptTerms: false,
     acceptNewsletter: false,
+    // Nouvelles informations d'entreprise
+    companyAddress: "",
+    companyPostalCode: "",
+    companyCity: "",
+    companySiret: "",
+    companyLegalForm: "Micro-entrepreneur",
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
@@ -89,6 +106,35 @@ export default function InscriptionPage() {
       newErrors.confirmPassword = "Les mots de passe ne correspondent pas";
     }
 
+    // Validation entreprise
+    if (!formData.company.trim()) {
+      newErrors.company = "Le nom de l'entreprise est requis";
+    }
+
+    // Validation adresse entreprise
+    if (!formData.companyAddress.trim()) {
+      newErrors.companyAddress = "L'adresse de l'entreprise est requise";
+    }
+
+    // Validation code postal
+    if (!formData.companyPostalCode.trim()) {
+      newErrors.companyPostalCode = "Le code postal est requis";
+    } else if (!/^\d{5}$/.test(formData.companyPostalCode)) {
+      newErrors.companyPostalCode = "Le code postal doit contenir 5 chiffres";
+    }
+
+    // Validation ville
+    if (!formData.companyCity.trim()) {
+      newErrors.companyCity = "La ville est requise";
+    }
+
+    // Validation SIRET
+    if (!formData.companySiret.trim()) {
+      newErrors.companySiret = "Le SIRET est requis";
+    } else if (!/^\d{14}$/.test(formData.companySiret)) {
+      newErrors.companySiret = "Le SIRET doit contenir 14 chiffres";
+    }
+
     // Validation conditions d'utilisation
     if (!formData.acceptTerms) {
       newErrors.acceptTerms =
@@ -99,8 +145,12 @@ export default function InscriptionPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target;
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    const { name, value, type } = e.target;
+    const checked = "checked" in e.target ? e.target.checked : false;
+
     setFormData((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value,
@@ -695,16 +745,256 @@ export default function InscriptionPage() {
                 )}
               </div>
 
-              {/* Informations optionnelles */}
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-                  gap: "20px",
-                  marginBottom: "32px",
-                }}
-              >
-                <div>
+              {/* Informations entreprise */}
+              <div style={{ marginBottom: "32px" }}>
+                <h3
+                  style={{
+                    color: "#ffffff",
+                    fontSize: "18px",
+                    fontWeight: "600",
+                    marginBottom: "20px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                  }}
+                >
+                  🏢 Informations de votre entreprise
+                </h3>
+
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+                    gap: "20px",
+                    marginBottom: "20px",
+                  }}
+                >
+                  <div>
+                    <label
+                      style={{
+                        display: "block",
+                        marginBottom: "8px",
+                        color: "#ffffff",
+                        fontWeight: "500",
+                      }}
+                    >
+                      Nom de l'entreprise *
+                    </label>
+                    <input
+                      type="text"
+                      name="company"
+                      value={formData.company}
+                      onChange={handleInputChange}
+                      style={{
+                        width: "100%",
+                        padding: "12px 16px",
+                        borderRadius: "8px",
+                        border: `1px solid ${
+                          errors.company
+                            ? "#ef4444"
+                            : "rgba(255, 255, 255, 0.2)"
+                        }`,
+                        background: "rgba(255, 255, 255, 0.05)",
+                        color: "#ffffff",
+                        fontSize: "16px",
+                        outline: "none",
+                        transition: "all 0.3s ease",
+                      }}
+                      onFocus={(e) => {
+                        if (!errors.company) {
+                          e.target.style.borderColor = "#8b5cf6";
+                          e.target.style.boxShadow =
+                            "0 0 0 3px rgba(139, 92, 246, 0.1)";
+                        }
+                      }}
+                      onBlur={(e) => {
+                        if (!errors.company) {
+                          e.target.style.borderColor =
+                            "rgba(255, 255, 255, 0.2)";
+                          e.target.style.boxShadow = "none";
+                        }
+                      }}
+                    />
+                    {errors.company && (
+                      <p
+                        style={{
+                          color: "#ef4444",
+                          fontSize: "14px",
+                          marginTop: "4px",
+                        }}
+                      >
+                        {errors.company}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label
+                      style={{
+                        display: "block",
+                        marginBottom: "8px",
+                        color: "#ffffff",
+                        fontWeight: "500",
+                      }}
+                    >
+                      Forme juridique *
+                    </label>
+                    <select
+                      name="companyLegalForm"
+                      value={formData.companyLegalForm}
+                      onChange={handleInputChange}
+                      style={{
+                        width: "100%",
+                        padding: "12px 16px",
+                        borderRadius: "8px",
+                        border: "1px solid rgba(255, 255, 255, 0.2)",
+                        background: "rgba(255, 255, 255, 0.05)",
+                        color: "#ffffff",
+                        fontSize: "16px",
+                        outline: "none",
+                        transition: "all 0.3s ease",
+                      }}
+                    >
+                      <option
+                        value="Micro-entrepreneur"
+                        style={{ background: "#1a1a2e" }}
+                      >
+                        Micro-entrepreneur
+                      </option>
+                      <option value="EI" style={{ background: "#1a1a2e" }}>
+                        Entreprise Individuelle (EI)
+                      </option>
+                      <option value="EURL" style={{ background: "#1a1a2e" }}>
+                        EURL
+                      </option>
+                      <option value="SARL" style={{ background: "#1a1a2e" }}>
+                        SARL
+                      </option>
+                      <option value="SAS" style={{ background: "#1a1a2e" }}>
+                        SAS
+                      </option>
+                      <option value="SASU" style={{ background: "#1a1a2e" }}>
+                        SASU
+                      </option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label
+                      style={{
+                        display: "block",
+                        marginBottom: "8px",
+                        color: "#ffffff",
+                        fontWeight: "500",
+                      }}
+                    >
+                      SIRET *
+                    </label>
+                    <input
+                      type="text"
+                      name="companySiret"
+                      value={formData.companySiret}
+                      onChange={(e) => {
+                        const value = e.target.value
+                          .replace(/\D/g, "")
+                          .slice(0, 14);
+                        setFormData((prev) => ({
+                          ...prev,
+                          companySiret: value,
+                        }));
+                        if (errors.companySiret) {
+                          setErrors((prev) => ({
+                            ...prev,
+                            companySiret: undefined,
+                          }));
+                        }
+                      }}
+                      placeholder="12345678901234"
+                      style={{
+                        width: "100%",
+                        padding: "12px 16px",
+                        borderRadius: "8px",
+                        border: `1px solid ${
+                          errors.companySiret
+                            ? "#ef4444"
+                            : "rgba(255, 255, 255, 0.2)"
+                        }`,
+                        background: "rgba(255, 255, 255, 0.05)",
+                        color: "#ffffff",
+                        fontSize: "16px",
+                        outline: "none",
+                        transition: "all 0.3s ease",
+                      }}
+                      onFocus={(e) => {
+                        if (!errors.companySiret) {
+                          e.target.style.borderColor = "#8b5cf6";
+                          e.target.style.boxShadow =
+                            "0 0 0 3px rgba(139, 92, 246, 0.1)";
+                        }
+                      }}
+                      onBlur={(e) => {
+                        if (!errors.companySiret) {
+                          e.target.style.borderColor =
+                            "rgba(255, 255, 255, 0.2)";
+                          e.target.style.boxShadow = "none";
+                        }
+                      }}
+                    />
+                    {errors.companySiret && (
+                      <p
+                        style={{
+                          color: "#ef4444",
+                          fontSize: "14px",
+                          marginTop: "4px",
+                        }}
+                      >
+                        {errors.companySiret}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label
+                      style={{
+                        display: "block",
+                        marginBottom: "8px",
+                        color: "#ffffff",
+                        fontWeight: "500",
+                      }}
+                    >
+                      Téléphone (optionnel)
+                    </label>
+                    <input
+                      type="tel"
+                      name="phone"
+                      value={formData.phone}
+                      onChange={handleInputChange}
+                      style={{
+                        width: "100%",
+                        padding: "12px 16px",
+                        borderRadius: "8px",
+                        border: "1px solid rgba(255, 255, 255, 0.2)",
+                        background: "rgba(255, 255, 255, 0.05)",
+                        color: "#ffffff",
+                        fontSize: "16px",
+                        outline: "none",
+                        transition: "all 0.3s ease",
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.borderColor = "#8b5cf6";
+                        e.target.style.boxShadow =
+                          "0 0 0 3px rgba(139, 92, 246, 0.1)";
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = "rgba(255, 255, 255, 0.2)";
+                        e.target.style.boxShadow = "none";
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Adresse de l'entreprise */}
+                <div style={{ marginBottom: "20px" }}>
                   <label
                     style={{
                       display: "block",
@@ -713,18 +1003,23 @@ export default function InscriptionPage() {
                       fontWeight: "500",
                     }}
                   >
-                    Entreprise (optionnel)
+                    Adresse de l'entreprise *
                   </label>
                   <input
                     type="text"
-                    name="company"
-                    value={formData.company}
+                    name="companyAddress"
+                    value={formData.companyAddress}
                     onChange={handleInputChange}
+                    placeholder="123 Rue de l'Entreprise"
                     style={{
                       width: "100%",
                       padding: "12px 16px",
                       borderRadius: "8px",
-                      border: "1px solid rgba(255, 255, 255, 0.2)",
+                      border: `1px solid ${
+                        errors.companyAddress
+                          ? "#ef4444"
+                          : "rgba(255, 255, 255, 0.2)"
+                      }`,
                       background: "rgba(255, 255, 255, 0.05)",
                       color: "#ffffff",
                       fontSize: "16px",
@@ -732,54 +1027,172 @@ export default function InscriptionPage() {
                       transition: "all 0.3s ease",
                     }}
                     onFocus={(e) => {
-                      e.target.style.borderColor = "#8b5cf6";
-                      e.target.style.boxShadow =
-                        "0 0 0 3px rgba(139, 92, 246, 0.1)";
+                      if (!errors.companyAddress) {
+                        e.target.style.borderColor = "#8b5cf6";
+                        e.target.style.boxShadow =
+                          "0 0 0 3px rgba(139, 92, 246, 0.1)";
+                      }
                     }}
                     onBlur={(e) => {
-                      e.target.style.borderColor = "rgba(255, 255, 255, 0.2)";
-                      e.target.style.boxShadow = "none";
+                      if (!errors.companyAddress) {
+                        e.target.style.borderColor = "rgba(255, 255, 255, 0.2)";
+                        e.target.style.boxShadow = "none";
+                      }
                     }}
                   />
+                  {errors.companyAddress && (
+                    <p
+                      style={{
+                        color: "#ef4444",
+                        fontSize: "14px",
+                        marginTop: "4px",
+                      }}
+                    >
+                      {errors.companyAddress}
+                    </p>
+                  )}
                 </div>
 
-                <div>
-                  <label
-                    style={{
-                      display: "block",
-                      marginBottom: "8px",
-                      color: "#ffffff",
-                      fontWeight: "500",
-                    }}
-                  >
-                    Téléphone (optionnel)
-                  </label>
-                  <input
-                    type="tel"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleInputChange}
-                    style={{
-                      width: "100%",
-                      padding: "12px 16px",
-                      borderRadius: "8px",
-                      border: "1px solid rgba(255, 255, 255, 0.2)",
-                      background: "rgba(255, 255, 255, 0.05)",
-                      color: "#ffffff",
-                      fontSize: "16px",
-                      outline: "none",
-                      transition: "all 0.3s ease",
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = "#8b5cf6";
-                      e.target.style.boxShadow =
-                        "0 0 0 3px rgba(139, 92, 246, 0.1)";
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = "rgba(255, 255, 255, 0.2)";
-                      e.target.style.boxShadow = "none";
-                    }}
-                  />
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 2fr",
+                    gap: "20px",
+                  }}
+                >
+                  <div>
+                    <label
+                      style={{
+                        display: "block",
+                        marginBottom: "8px",
+                        color: "#ffffff",
+                        fontWeight: "500",
+                      }}
+                    >
+                      Code postal *
+                    </label>
+                    <input
+                      type="text"
+                      name="companyPostalCode"
+                      value={formData.companyPostalCode}
+                      onChange={(e) => {
+                        const value = e.target.value
+                          .replace(/\D/g, "")
+                          .slice(0, 5);
+                        setFormData((prev) => ({
+                          ...prev,
+                          companyPostalCode: value,
+                        }));
+                        if (errors.companyPostalCode) {
+                          setErrors((prev) => ({
+                            ...prev,
+                            companyPostalCode: undefined,
+                          }));
+                        }
+                      }}
+                      placeholder="75001"
+                      style={{
+                        width: "100%",
+                        padding: "12px 16px",
+                        borderRadius: "8px",
+                        border: `1px solid ${
+                          errors.companyPostalCode
+                            ? "#ef4444"
+                            : "rgba(255, 255, 255, 0.2)"
+                        }`,
+                        background: "rgba(255, 255, 255, 0.05)",
+                        color: "#ffffff",
+                        fontSize: "16px",
+                        outline: "none",
+                        transition: "all 0.3s ease",
+                      }}
+                      onFocus={(e) => {
+                        if (!errors.companyPostalCode) {
+                          e.target.style.borderColor = "#8b5cf6";
+                          e.target.style.boxShadow =
+                            "0 0 0 3px rgba(139, 92, 246, 0.1)";
+                        }
+                      }}
+                      onBlur={(e) => {
+                        if (!errors.companyPostalCode) {
+                          e.target.style.borderColor =
+                            "rgba(255, 255, 255, 0.2)";
+                          e.target.style.boxShadow = "none";
+                        }
+                      }}
+                    />
+                    {errors.companyPostalCode && (
+                      <p
+                        style={{
+                          color: "#ef4444",
+                          fontSize: "14px",
+                          marginTop: "4px",
+                        }}
+                      >
+                        {errors.companyPostalCode}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label
+                      style={{
+                        display: "block",
+                        marginBottom: "8px",
+                        color: "#ffffff",
+                        fontWeight: "500",
+                      }}
+                    >
+                      Ville *
+                    </label>
+                    <input
+                      type="text"
+                      name="companyCity"
+                      value={formData.companyCity}
+                      onChange={handleInputChange}
+                      placeholder="Paris"
+                      style={{
+                        width: "100%",
+                        padding: "12px 16px",
+                        borderRadius: "8px",
+                        border: `1px solid ${
+                          errors.companyCity
+                            ? "#ef4444"
+                            : "rgba(255, 255, 255, 0.2)"
+                        }`,
+                        background: "rgba(255, 255, 255, 0.05)",
+                        color: "#ffffff",
+                        fontSize: "16px",
+                        outline: "none",
+                        transition: "all 0.3s ease",
+                      }}
+                      onFocus={(e) => {
+                        if (!errors.companyCity) {
+                          e.target.style.borderColor = "#8b5cf6";
+                          e.target.style.boxShadow =
+                            "0 0 0 3px rgba(139, 92, 246, 0.1)";
+                        }
+                      }}
+                      onBlur={(e) => {
+                        if (!errors.companyCity) {
+                          e.target.style.borderColor =
+                            "rgba(255, 255, 255, 0.2)";
+                          e.target.style.boxShadow = "none";
+                        }
+                      }}
+                    />
+                    {errors.companyCity && (
+                      <p
+                        style={{
+                          color: "#ef4444",
+                          fontSize: "14px",
+                          marginTop: "4px",
+                        }}
+                      >
+                        {errors.companyCity}
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
 

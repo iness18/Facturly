@@ -2983,6 +2983,16 @@ export default function MonComptePage() {
             >
               Clients
             </a>
+            <a
+              href="/dashboard/agenda"
+              style={{
+                color: "#d1d5db",
+                textDecoration: "none",
+                fontSize: "14px",
+              }}
+            >
+              Agenda
+            </a>
           </div>
 
           {/* Actions */}
@@ -3077,6 +3087,16 @@ export default function MonComptePage() {
                 }}
               >
                 Clients
+              </a>
+              <a
+                href="/dashboard/agenda"
+                style={{
+                  color: "#d1d5db",
+                  textDecoration: "none",
+                  padding: "8px 0",
+                }}
+              >
+                Agenda
               </a>
             </div>
           </div>
