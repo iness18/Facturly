@@ -1,0 +1,278 @@
+/* Styles pour la page d'accueil */
+.main {
+  background-color: var(--color-background);
+  overflow: hidden;
+}
+
+.blob {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: -1;
+  width: 500px;
+  height: 500px;
+  border-radius: 50%;
+  background: linear-gradient(
+    135deg,
+    var(--color-primary) 0%,
+    var(--color-accent) 100%
+  );
+  opacity: 0.3;
+  filter: blur(60px);
+  animation: float 8s ease-in-out infinite;
+}
+
+.content {
+  max-width: 800px;
+  z-index: 1;
+}
+
+.title {
+  font-family: var(--font-display);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--color-text-primary);
+}
+
+.titleGradient {
+  background: linear-gradient(
+    135deg,
+    var(--color-primary) 0%,
+    var(--color-accent) 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: gradient 8s ease infinite;
+  background-size: 400% 400%;
+}
+
+.badge {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+  border-color: var(--color-border-light);
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.badgeIcon {
+  width: 16px;
+  height: 16px;
+  color: var(--color-accent);
+}
+
+.description {
+  max-width: 600px;
+  line-height: 1.7;
+  font-size: 1.125rem;
+}
+
+.ctaButton {
+  background: linear-gradient(
+    135deg,
+    var(--color-primary) 0%,
+    var(--color-primary-dark) 100%
+  );
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  position: relative;
+  overflow: hidden;
+}
+
+.ctaButton::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.2),
+    transparent
+  );
+  transition: left 0.5s;
+}
+
+.ctaButton:hover::before {
+  left: 100%;
+}
+
+.ctaButton:hover {
+  box-shadow: 0 20px 40px rgba(99, 102, 241, 0.4);
+}
+
+.ctaIcon {
+  width: 20px;
+  height: 20px;
+  transition: transform var(--transition-normal);
+}
+
+.ctaButton:hover .ctaIcon {
+  transform: translateX(4px);
+}
+
+.stats {
+  padding-top: var(--spacing-xl);
+  border-top: 1px solid var(--color-border);
+}
+
+.stats > div {
+  opacity: 0;
+  animation: fadeInUp 0.6s ease-out forwards;
+}
+
+.stats > div:nth-child(1) {
+  animation-delay: 0.2s;
+}
+
+.stats > div:nth-child(2) {
+  animation-delay: 0.4s;
+}
+
+.stats > div:nth-child(3) {
+  animation-delay: 0.6s;
+}
+
+/* Section Fonctionnalités */
+.featuresSection {
+  background-color: var(--color-surface);
+  padding: var(--spacing-3xl) 0;
+}
+
+.sectionTitle {
+  color: var(--color-text-primary);
+  font-family: var(--font-display);
+  line-height: 1.2;
+  margin-bottom: var(--spacing-md);
+}
+
+.sectionDescription {
+  max-width: 600px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+.featuresGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: var(--spacing-xl);
+  margin-top: var(--spacing-2xl);
+}
+
+.featureCard {
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-xl);
+  transition: all var(--transition-normal);
+  position: relative;
+  overflow: hidden;
+}
+
+.featureCard::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+  opacity: 0;
+  transition: opacity var(--transition-normal);
+}
+
+.featureCard:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--color-border-light);
+}
+
+.featureCard:hover::before {
+  opacity: 1;
+}
+
+.featureIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 60px;
+  background: rgba(99, 102, 241, 0.1);
+  border-radius: var(--radius-lg);
+  margin-bottom: var(--spacing-md);
+}
+
+.featureCard h3 {
+  color: var(--color-text-primary);
+  font-weight: 600;
+  margin-bottom: var(--spacing-md);
+}
+
+.featureCard p {
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .blob {
+    width: 300px;
+    height: 300px;
+  }
+
+  .title {
+    font-size: 2.5rem;
+  }
+
+  .description {
+    font-size: 1rem;
+  }
+
+  .stats {
+    flex-direction: column;
+    gap: var(--spacing-lg);
+  }
+
+  .ctaButton {
+    padding: var(--spacing-md) var(--spacing-lg);
+    font-size: 1rem;
+  }
+
+  .featuresSection {
+    padding: var(--spacing-2xl) 0;
+  }
+
+  .featuresGrid {
+    grid-template-columns: 1fr;
+    gap: var(--spacing-lg);
+  }
+
+  .sectionTitle {
+    font-size: 2rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .title {
+    font-size: 2rem;
+  }
+
+  .badge {
+    font-size: 0.75rem;
+    padding: var(--spacing-sm) var(--spacing-md);
+  }
+
+  .featureCard {
+    padding: var(--spacing-lg);
+  }
+
+  .sectionTitle {
+    font-size: 1.75rem;
+  }
+}

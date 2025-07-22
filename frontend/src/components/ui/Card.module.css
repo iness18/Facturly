@@ -1,0 +1,91 @@
+.card {
+  border-radius: 0.75rem;
+  border: 1px solid var(--border);
+  background-color: var(--card);
+  color: var(--card-foreground);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  transition: all 0.2s ease-in-out;
+}
+
+.card:hover {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.cardHeader {
+  display: flex;
+  flex-direction: column;
+  space-y: 1.5rem;
+  padding: 1.5rem;
+  padding-bottom: 0;
+}
+
+.cardTitle {
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.025em;
+  margin: 0;
+}
+
+.cardDescription {
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+  margin: 0;
+}
+
+.cardContent {
+  padding: 1.5rem;
+  padding-top: 0;
+}
+
+/* Variantes pour le dashboard */
+.card.bg-white\/5 {
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.card.border-white\/10 {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Styles pour les classes Tailwind utilisées dans le dashboard */
+.cardHeader.flex {
+  display: flex;
+}
+
+.cardHeader.flex-row {
+  flex-direction: row;
+}
+
+.cardHeader.items-center {
+  align-items: center;
+}
+
+.cardHeader.justify-between {
+  justify-content: space-between;
+}
+
+.cardHeader.space-y-0 {
+  gap: 0;
+}
+
+.cardHeader.pb-2 {
+  padding-bottom: 0.5rem;
+}
+
+.cardTitle.text-sm {
+  font-size: 0.875rem;
+}
+
+.cardTitle.font-medium {
+  font-weight: 500;
+}
+
+.cardTitle.text-gray-400 {
+  color: #9ca3af;
+}
+
+.cardTitle.text-white {
+  color: white;
+}

@@ -19,6 +19,7 @@
 - 🚨 **Sécurité**: Mots de passe en dur dans .env
 - 🚨 **Validation manquante**: Aucune validation des données
 - ✅ **Erreurs ESLint corrigées**: Apostrophes non échappées dans les composants React
+- ✅ **Conflits serveurs Next.js résolus**: Multiples instances causaient des erreurs ENOENT
 
 ### Focus actuel
 
@@ -106,6 +107,44 @@ Le projet est en phase de **setup initial** avec une belle interface mais un bac
 - **Séparation claire** des responsabilités
 - **Documentation** systématique des décisions
 - **Tests** dès le début du développement
+
+## Résolution des problèmes
+
+### Conflits serveurs Next.js (Résolu - 22 juillet 2025)
+
+**Problème**: Multiples instances de `npm run dev` causaient des erreurs ENOENT en boucle et des conflits de ports.
+
+**Symptômes**:
+
+- Erreurs répétitives `ENOENT: no such file or directory`
+- Fichiers de manifeste Next.js introuvables
+- Multiples processus Node.js en cours d'exécution
+- Ports 3000, 3002, 3003 utilisés simultanément
+
+**Solution appliquée**:
+
+1. **Arrêt de tous les processus Node.js**:
+
+   ```bash
+   powershell "Get-Process node | Stop-Process -Force"
+   ```
+
+2. **Nettoyage du cache Next.js**:
+
+   ```bash
+   cd frontend && rm -rf .next
+   ```
+
+3. **Redémarrage propre**:
+   ```bash
+   npm run dev
+   ```
+
+**Prévention**:
+
+- Ne jamais lancer plusieurs instances de `npm run dev` simultanément
+- Toujours vérifier les processus actifs avant de démarrer : `tasklist | findstr node`
+- En cas de problème, nettoyer le cache `.next` avant de redémarrer
 
 ## Configuration de développement
 

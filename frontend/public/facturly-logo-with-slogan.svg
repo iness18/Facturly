@@ -1,0 +1,15 @@
+<svg width="500" height="300" viewBox="0 0 500 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Logo avec slogan "GAGNEZ DU TEMPS, RESTEZ INDÉPENDANT." -->
+  <text x="50" y="100" font-family="Arial, sans-serif" font-size="48" font-weight="bold" fill="url(#gradient1)">FACTURLY</text>
+  <line x1="10" y1="140" x2="490" y2="140" stroke="url(#gradient1)" stroke-width="2"/>
+  <text x="63" y="165" font-family="Arial, sans-serif" font-size="14" fill="url(#gradient1)">GAGNEZ DU TEMPS, RESTEZ INDÉPENDANT.</text>
+  <line x1="10" y1="175" x2="490" y2="175" stroke="url(#gradient1)" stroke-width="2"/>
+  
+  <defs>
+    <linearGradient id="gradient1" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#8b5cf6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#3b82f6;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+</svg>

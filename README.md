@@ -1,6 +1,6 @@
 # Facturly - Application de Facturation Moderne
 
-Une application de facturation complète construite avec Next.js, NestJS, et PostgreSQL.
+Une application de facturation complète construite avec Next.js, NestJS, et PostgreSQL. Interface moderne avec CSS Modules et migrations automatiques.
 
 ## 🚀 Démarrage rapide
 
@@ -18,41 +18,20 @@ git clone <votre-repo>
 cd facturly
 ```
 
-2. **Installer les dépendances**
+2. **Configurer l'environnement**
 
 ```bash
-# Backend
-cd backend
-npm install
-cd ..
-
-# Frontend
-cd frontend
-npm install
-cd ..
-```
-
-3. **Configurer l'environnement**
-
-```bash
-# Copier le fichier d'exemple
-cp .env.example .env
+# Le fichier .env est déjà configuré avec des valeurs par défaut
 # Modifier les variables si nécessaire
 ```
 
-4. **Démarrer avec Docker**
+3. **Démarrer avec Docker (tout automatique)**
 
 ```bash
 docker-compose up -d
 ```
 
-5. **Initialiser la base de données**
-
-```bash
-cd backend
-npx prisma migrate dev
-npx prisma generate
-```
+✨ **Les migrations Prisma s'appliquent automatiquement au démarrage !**
 
 ### URLs d'accès
 
@@ -68,16 +47,36 @@ facturly/
 │   ├── src/
 │   │   ├── database/       # Service Prisma
 │   │   ├── invoices/       # Module factures
-│   │   └── ...
-│   └── prisma/             # Schéma de base de données
+│   │   └── main.ts         # Point d'entrée
+│   └── prisma/             # Schéma et migrations
 ├── frontend/               # Interface Next.js
 │   ├── src/
 │   │   ├── app/           # Pages (App Router)
-│   │   ├── components/    # Composants réutilisables
-│   │   └── lib/          # Utilitaires
+│   │   │   ├── page.tsx   # Page d'accueil avec Hero + Fonctionnalités
+│   │   │   ├── page.module.css # Styles CSS Modules
+│   │   │   └── globals.css # Système de design
+│   │   └── components/    # Composants réutilisables
+│   │       └── ui/        # Composants UI (Button, etc.)
 ├── memory-bank/           # Documentation du projet
 └── docker-compose.yml     # Configuration Docker
 ```
+
+## 🎨 Interface utilisateur
+
+### Page d'accueil moderne
+
+- **Section Hero** : Titre avec gradient, badge animé, CTA et statistiques
+- **Section Fonctionnalités** : 5 cartes présentant les capacités principales
+- **Design responsive** : Adapté mobile et desktop
+- **Animations fluides** : Effets de hover et transitions CSS
+
+### Fonctionnalités présentées
+
+1. **📄 Factures personnalisées** - Création avec branding et templates
+2. **👥 Répertoire clients** - Gestion complète des contacts
+3. **⏰ Suivi en temps réel** - Statuts et notifications automatiques
+4. **📊 Tableau de bord** - Statistiques et analyses détaillées
+5. **🛡️ Sécurité avancée** - Authentification et protection des données
 
 ## 🛠️ Développement
 
@@ -99,6 +98,10 @@ docker-compose up --build
 
 # Accéder à la base de données
 docker-compose exec db psql -U facturly_user -d facturly_db
+
+# Migrations manuelles (si nécessaire)
+docker-compose exec backend npx prisma migrate deploy
+docker-compose exec backend npx prisma generate
 ```
 
 ### API Endpoints
@@ -126,35 +129,38 @@ curl -X POST http://localhost:3001/invoices \
 
 ### Backend
 
-- **NestJS** - Framework Node.js
-- **Prisma** - ORM pour PostgreSQL
-- **TypeScript** - Langage typé
+- **NestJS 11** - Framework Node.js moderne
+- **Prisma 6.12** - ORM pour PostgreSQL avec migrations automatiques
+- **TypeScript 5.7** - Langage typé
 - **class-validator** - Validation des données
+- **PostgreSQL 15** - Base de données relationnelle
 
 ### Frontend
 
-- **Next.js 15** - Framework React
-- **React 19** - Interface utilisateur
-- **Tailwind CSS** - Styling
-- **shadcn/ui** - Composants UI
+- **Next.js 15** - Framework React avec App Router
+- **React 19** - Interface utilisateur moderne
+- **CSS Modules** - Styling scopé et performant
+- **Lucide React** - Icônes modernes
+- **TypeScript 5.8** - Développement typé
 
 ### Infrastructure
 
-- **PostgreSQL** - Base de données
-- **Docker** - Containerisation
-- **Docker Compose** - Orchestration
+- **Docker & Docker Compose** - Containerisation et orchestration
+- **Migrations automatiques** - Prisma s'exécute au démarrage
+- **Hot reload** - Rechargement automatique en développement
+- **Health checks** - Vérification de l'état des services
 
 ## 📊 Fonctionnalités
 
 ### ✅ Implémentées
 
-- Interface landing page moderne
-- Dashboard avec statistiques
-- API CRUD complète pour les factures
-- Base de données PostgreSQL
-- Validation des données
-- Configuration CORS
-- Animations CSS
+- **Interface moderne** : Page d'accueil avec Hero et section Fonctionnalités
+- **CSS Modules** : Système de styling moderne et performant
+- **API CRUD complète** : Gestion des factures avec validation
+- **Base de données** : PostgreSQL avec schéma Prisma
+- **Migrations automatiques** : Déploiement automatique au démarrage
+- **Design responsive** : Interface adaptée à tous les écrans
+- **Composants réutilisables** : Système de design cohérent
 
 ### 🚧 En développement
 
@@ -176,43 +182,78 @@ curl -X POST http://localhost:3001/invoices \
 
 ### Variables d'environnement
 
-Voir `.env.example` pour la liste complète des variables.
+Le fichier `.env` est pré-configuré avec :
 
-Variables principales :
+```env
+# Base de données PostgreSQL
+POSTGRES_USER=facturly_user
+POSTGRES_PASSWORD=F4ctur1y_S3cur3_P4ssw0rd_2025
+POSTGRES_DB=facturly_db
 
-- `DATABASE_URL` - URL de connexion PostgreSQL
-- `NEXT_PUBLIC_API_URL` - URL de l'API pour le frontend
-- `JWT_SECRET` - Secret pour les tokens JWT
-- `NODE_ENV` - Environnement (development/production)
+# URL de connexion Prisma (automatique)
+DATABASE_URL="postgresql://facturly_user:F4ctur1y_S3cur3_P4ssw0rd_2025@db:5432/facturly_db?schema=public"
+
+# Frontend
+NEXT_PUBLIC_API_URL=http://localhost:3001
+FRONTEND_URL=http://localhost:3000
+
+# Sécurité
+JWT_SECRET=F4ctur1y_JWT_S3cr3t_K3y_2025_V3ry_L0ng_4nd_S3cur3
+NODE_ENV=development
+PORT=3001
+```
 
 ### Base de données
 
 Le schéma Prisma définit actuellement :
 
-- **Invoice** - Factures avec numéro, client, montant
-- Relations futures : User, Client, InvoiceItem
+- **Invoice** - Factures avec numéro unique, client, montant et timestamps
+- **Migrations automatiques** - Appliquées au démarrage du backend
+- **Relations futures** : User, Client, InvoiceItem
+
+## 🎨 Système de design
+
+### CSS Modules
+
+- **Variables CSS** : Couleurs, espacements, typographie cohérents
+- **Composants scopés** : Styles isolés par composant
+- **Responsive design** : Breakpoints et grilles adaptatives
+- **Animations** : Transitions et effets modernes
+
+### Polices
+
+- **Inter** : Police principale (Google Fonts)
+- **Outfit** : Police d'affichage (Google Fonts)
+- **Optimisation** : Préchargement automatique
 
 ## 🐛 Dépannage
 
 ### Problèmes courants
 
-1. **Erreur de connexion à la base de données**
+1. **Erreur de migration Prisma**
 
    ```bash
-   docker-compose down
-   docker-compose up -d db
-   # Attendre que la DB soit prête
-   docker-compose up
+   # Les migrations sont automatiques, mais si problème :
+   docker-compose restart backend
+   # ou manuellement :
+   docker-compose exec backend npx prisma migrate deploy
    ```
 
-2. **Port déjà utilisé**
+2. **Problème d'affichage CSS**
+
+   ```bash
+   # Redémarrer le frontend pour vider le cache
+   docker-compose restart frontend
+   ```
+
+3. **Port déjà utilisé**
 
    ```bash
    # Modifier les ports dans docker-compose.yml
    # ou arrêter les services qui utilisent les ports 3000/3001/5432
    ```
 
-3. **Problème de permissions Docker**
+4. **Problème de permissions Docker**
    ```bash
    sudo docker-compose up
    # ou configurer Docker pour votre utilisateur
@@ -222,9 +263,22 @@ Le schéma Prisma définit actuellement :
 
 La documentation complète du projet est disponible dans le dossier `memory-bank/` :
 
-- `projectbrief.md` - Vision et objectifs
-- `systemPatterns.md` - Architecture technique
-- `progress.md` - État d'avancement
+- `projectbrief.md` - Vision et objectifs du projet
+- `systemPatterns.md` - Architecture et patterns techniques
+- `techContext.md` - Stack technique détaillé
+- `progress.md` - État d'avancement et roadmap
+- `activeContext.md` - Contexte de développement actuel
+
+## 🚀 Améliorations récentes
+
+### v2.0 - Refonte CSS et UX
+
+- ✅ **Remplacement de Tailwind** par CSS Modules pour plus de stabilité
+- ✅ **Migrations automatiques** Prisma au démarrage
+- ✅ **Section Fonctionnalités** avec 5 capacités principales
+- ✅ **Design system** moderne avec variables CSS
+- ✅ **Composants réutilisables** (Button, etc.)
+- ✅ **Interface responsive** optimisée
 
 ## 🤝 Contribution
 
@@ -237,3 +291,7 @@ La documentation complète du projet est disponible dans le dossier `memory-bank
 ## 📄 Licence
 
 Ce projet est sous licence MIT. Voir le fichier `LICENSE` pour plus de détails.
+
+---
+
+**Facturly** - Simplifiez votre facturation, développez votre activité 🚀
