@@ -1,0 +1,8 @@
+# Redirections pour Next.js App Router sur Netlify
+
+# Redirection pour les routes dynamiques du dashboard
+/dashboard/* /dashboard/index.html 200
+/dashboard/factures/edit/* /dashboard/factures/edit/[id]/index.html 200
+
+# Redirection générale pour toutes les autres routes (SPA fallback)
+/* /index.html 200
