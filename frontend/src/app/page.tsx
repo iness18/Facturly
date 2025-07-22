@@ -275,6 +275,7 @@ export default function HomePage() {
             }}
           >
             <button
+              onClick={() => (window.location.href = "/dashboard")}
               style={{
                 background: "linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)",
                 color: "#ffffff",
