@@ -523,14 +523,14 @@ export default function DashboardPage() {
               Clients
             </a>
             <a
-              href="/dashboard/parametres"
+              href="/dashboard/compte"
               style={{
                 color: "#d1d5db",
                 textDecoration: "none",
                 fontSize: "14px",
               }}
             >
-              Paramètres
+              Mon Compte
             </a>
           </div>
 
@@ -630,14 +630,14 @@ export default function DashboardPage() {
                 Clients
               </a>
               <a
-                href="/dashboard/parametres"
+                href="/dashboard/compte"
                 style={{
                   color: "#d1d5db",
                   textDecoration: "none",
                   padding: "8px 0",
                 }}
               >
-                Paramètres
+                Mon Compte
               </a>
             </div>
           </div>
