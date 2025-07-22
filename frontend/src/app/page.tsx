@@ -81,13 +81,19 @@ export default function HomePage() {
             <a href="#" style={{ color: "#d1d5db", textDecoration: "none" }}>
               Accueil
             </a>
-            <a href="#" style={{ color: "#d1d5db", textDecoration: "none" }}>
+            <a
+              href="/fonctionnalites"
+              style={{ color: "#d1d5db", textDecoration: "none" }}
+            >
               Fonctionnalités
             </a>
             <a href="#" style={{ color: "#d1d5db", textDecoration: "none" }}>
               Tarifs
             </a>
-            <a href="#" style={{ color: "#d1d5db", textDecoration: "none" }}>
+            <a
+              href="/contact"
+              style={{ color: "#d1d5db", textDecoration: "none" }}
+            >
               Contact
             </a>
           </div>
@@ -101,17 +107,21 @@ export default function HomePage() {
               gap: "16px",
             }}
           >
-            <button
+            <a
+              href="/connexion"
               style={{
                 background: "transparent",
                 border: "none",
                 color: "#d1d5db",
                 cursor: "pointer",
+                textDecoration: "none",
+                padding: "8px 16px",
               }}
             >
               Connexion
-            </button>
-            <button
+            </a>
+            <a
+              href="/inscription"
               style={{
                 background: "linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)",
                 color: "#ffffff",
@@ -119,10 +129,12 @@ export default function HomePage() {
                 borderRadius: "8px",
                 border: "none",
                 cursor: "pointer",
+                textDecoration: "none",
+                display: "inline-block",
               }}
             >
-              Commencer
-            </button>
+              S'inscrire
+            </a>
           </div>
 
           {/* Mobile Menu Button */}
@@ -290,12 +302,8 @@ export default function HomePage() {
               marginBottom: "64px",
             }}
           >
-            <button
-              onClick={() => {
-                if (typeof window !== "undefined") {
-                  window.location.href = "/dashboard";
-                }
-              }}
+            <a
+              href="/inscription"
               style={{
                 background: "linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)",
                 color: "#ffffff",
@@ -309,10 +317,11 @@ export default function HomePage() {
                 alignItems: "center",
                 justifyContent: "center",
                 gap: "8px",
+                textDecoration: "none",
               }}
             >
               Commencer Gratuitement →
-            </button>
+            </a>
             <button
               style={{
                 background: "rgba(255, 255, 255, 0.1)",

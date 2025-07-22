@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 // Composant Card réutilisable
@@ -830,6 +830,11 @@ export default function ClientsPage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const router = useRouter();
+
+  const handleProfileClick = () => {
+    router.push("/dashboard/compte");
+  };
 
   // Données d'exemple
   const allClients = [
@@ -923,15 +928,18 @@ export default function ClientsPage() {
               gap: "8px",
             }}
           >
-            <span
+            <a
+              href="/dashboard"
               style={{
                 fontSize: "20px",
                 fontWeight: "bold",
                 color: "#ffffff",
+                textDecoration: "none",
+                cursor: "pointer",
               }}
             >
               Facturly
-            </span>
+            </a>
           </div>
 
           {/* Desktop Menu */}
@@ -1005,6 +1013,7 @@ export default function ClientsPage() {
 
             {/* Bouton Profil */}
             <button
+              onClick={handleProfileClick}
               style={{
                 width: "36px",
                 height: "36px",

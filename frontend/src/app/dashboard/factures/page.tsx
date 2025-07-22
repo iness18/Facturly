@@ -1718,15 +1718,18 @@ export default function FacturesPage() {
               gap: "8px",
             }}
           >
-            <span
+            <a
+              href="/dashboard"
               style={{
                 fontSize: "20px",
                 fontWeight: "bold",
                 color: "#ffffff",
+                textDecoration: "none",
+                cursor: "pointer",
               }}
             >
               Facturly
-            </span>
+            </a>
           </div>
 
           {/* Desktop Menu */}
