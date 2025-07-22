@@ -1,9 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function HomePage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   return (
     <div
@@ -59,8 +71,9 @@ export default function HomePage() {
 
           {/* Desktop Menu */}
           <div
+            className="desktop-menu"
             style={{
-              display: window.innerWidth >= 768 ? "flex" : "none",
+              display: "none",
               alignItems: "center",
               gap: "32px",
             }}
@@ -81,8 +94,9 @@ export default function HomePage() {
 
           {/* CTA Buttons */}
           <div
+            className="desktop-menu"
             style={{
-              display: window.innerWidth >= 768 ? "flex" : "none",
+              display: "none",
               alignItems: "center",
               gap: "16px",
             }}
@@ -113,8 +127,9 @@ export default function HomePage() {
 
           {/* Mobile Menu Button */}
           <button
+            className="mobile-menu-btn"
             style={{
-              display: window.innerWidth < 768 ? "block" : "none",
+              display: "none",
               background: "transparent",
               border: "none",
               color: "#ffffff",
@@ -266,16 +281,21 @@ export default function HomePage() {
 
           {/* CTA Buttons */}
           <div
+            className="responsive-buttons"
             style={{
               display: "flex",
-              flexDirection: window.innerWidth < 640 ? "column" : "row",
+              flexDirection: "row",
               gap: "16px",
               justifyContent: "center",
               marginBottom: "64px",
             }}
           >
             <button
-              onClick={() => (window.location.href = "/dashboard")}
+              onClick={() => {
+                if (typeof window !== "undefined") {
+                  window.location.href = "/dashboard";
+                }
+              }}
               style={{
                 background: "linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)",
                 color: "#ffffff",

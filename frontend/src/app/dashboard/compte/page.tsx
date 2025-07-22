@@ -566,6 +566,7 @@ export default function MonComptePage() {
             {/* Mobile Menu Button */}
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="mobile-menu-btn"
               style={{
                 display: "block",
                 background: "transparent",
@@ -575,7 +576,6 @@ export default function MonComptePage() {
                 fontSize: "18px",
                 padding: "4px",
               }}
-              className="mobile-menu-btn"
             >
               {isMobileMenuOpen ? "✕" : "☰"}
             </button>

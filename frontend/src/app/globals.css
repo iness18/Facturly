@@ -122,6 +122,55 @@ a {
   .mobile-only {
     display: block !important;
   }
+
+  .desktop-menu {
+    display: none !important;
+  }
+
+  .mobile-menu-btn {
+    display: block !important;
+  }
+
+  /* Responsive pour les grilles */
+  .responsive-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  /* Responsive pour les cartes */
+  .responsive-card {
+    padding: 16px !important;
+  }
+
+  /* Responsive pour les tableaux */
+  .responsive-table {
+    overflow-x: auto;
+  }
+
+  .responsive-table table {
+    min-width: 600px;
+  }
+
+  /* Navigation responsive */
+  .responsive-nav {
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+
+  /* Formulaires responsive */
+  .responsive-form {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Boutons responsive */
+  .responsive-buttons {
+    flex-direction: column !important;
+    width: 100% !important;
+  }
+
+  .responsive-buttons button {
+    width: 100% !important;
+  }
 }
 
 @media (min-width: 769px) {
@@ -131,5 +180,40 @@ a {
 
   .mobile-only {
     display: none !important;
+  }
+
+  .desktop-menu {
+    display: flex !important;
+  }
+
+  .mobile-menu-btn {
+    display: none !important;
+  }
+}
+
+/* Classes utilitaires responsive */
+.grid-responsive {
+  display: grid;
+  gap: 16px;
+}
+
+@media (min-width: 640px) {
+  .grid-responsive {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .grid-responsive {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* Responsive pour les modaux */
+@media (max-width: 768px) {
+  .modal-content {
+    margin: 10px !important;
+    max-width: calc(100vw - 20px) !important;
+    max-height: calc(100vh - 20px) !important;
   }
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 
 // Composant Card réutilisable
@@ -32,9 +32,11 @@ const Card = ({
 const CreateInvoiceModal = ({
   isOpen,
   onClose,
+  onInvoiceCreated,
 }: {
   isOpen: boolean;
   onClose: () => void;
+  onInvoiceCreated: (invoice: any) => void;
 }) => {
   const [formData, setFormData] = useState({
     client: "",
@@ -54,9 +56,23 @@ const CreateInvoiceModal = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Ici on traiterait la création de la facture
-    console.log("Nouvelle facture:", formData);
+
+    // Créer une nouvelle facture
+    const newInvoice = {
+      id: Date.now(), // ID temporaire basé sur timestamp
+      number: `FAC-2024-${String(Date.now()).slice(-3)}`,
+      client: formData.client,
+      date: new Date().toLocaleDateString("fr-FR"),
+      amount: `${parseFloat(formData.amount).toFixed(2)} €`,
+      status: "draft",
+    };
+
+    // Ajouter la facture à la liste
+    onInvoiceCreated(newInvoice);
+
+    console.log("Nouvelle facture créée:", newInvoice);
     onClose();
+
     // Reset form
     setFormData({
       client: "",
@@ -458,6 +474,464 @@ const CreateInvoiceModal = ({
   );
 };
 
+// Composant Modal de détails de facture
+const InvoiceDetailsModal = ({
+  isOpen,
+  onClose,
+  invoice,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  invoice: any | null;
+}) => {
+  if (!isOpen || !invoice) return null;
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: "rgba(0, 0, 0, 0.7)",
+        backdropFilter: "blur(5px)",
+        zIndex: 1000,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "20px",
+      }}
+    >
+      <div
+        style={{
+          background:
+            "linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #16213e 100%)",
+          border: "1px solid rgba(255, 255, 255, 0.2)",
+          borderRadius: "20px",
+          padding: "32px",
+          maxWidth: "600px",
+          width: "100%",
+          maxHeight: "90vh",
+          overflowY: "auto",
+          position: "relative",
+        }}
+      >
+        {/* Header */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginBottom: "24px",
+          }}
+        >
+          <h2
+            style={{
+              fontSize: "24px",
+              fontWeight: "bold",
+              color: "#ffffff",
+              margin: 0,
+            }}
+          >
+            Détails de la Facture
+          </h2>
+          <button
+            onClick={onClose}
+            style={{
+              background: "rgba(255, 255, 255, 0.1)",
+              border: "1px solid rgba(255, 255, 255, 0.2)",
+              borderRadius: "50%",
+              width: "40px",
+              height: "40px",
+              color: "#ffffff",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "18px",
+            }}
+          >
+            ✕
+          </button>
+        </div>
+
+        {/* Contenu */}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: "24px",
+          }}
+        >
+          {/* Informations principales */}
+          <Card>
+            <h3
+              style={{
+                fontSize: "18px",
+                fontWeight: "600",
+                color: "#ffffff",
+                margin: 0,
+                marginBottom: "16px",
+              }}
+            >
+              📄 Informations Générales
+            </h3>
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+                gap: "16px",
+              }}
+            >
+              <div>
+                <label
+                  style={{
+                    fontSize: "12px",
+                    color: "#9ca3af",
+                    textTransform: "uppercase",
+                    fontWeight: "600",
+                  }}
+                >
+                  Numéro de facture
+                </label>
+                <div
+                  style={{
+                    fontSize: "16px",
+                    color: "#ffffff",
+                    fontWeight: "600",
+                    marginTop: "4px",
+                  }}
+                >
+                  {invoice.number}
+                </div>
+              </div>
+              <div>
+                <label
+                  style={{
+                    fontSize: "12px",
+                    color: "#9ca3af",
+                    textTransform: "uppercase",
+                    fontWeight: "600",
+                  }}
+                >
+                  Date d'émission
+                </label>
+                <div
+                  style={{
+                    fontSize: "16px",
+                    color: "#ffffff",
+                    marginTop: "4px",
+                  }}
+                >
+                  {invoice.date}
+                </div>
+              </div>
+              <div>
+                <label
+                  style={{
+                    fontSize: "12px",
+                    color: "#9ca3af",
+                    textTransform: "uppercase",
+                    fontWeight: "600",
+                  }}
+                >
+                  Montant
+                </label>
+                <div
+                  style={{
+                    fontSize: "20px",
+                    color: "#10b981",
+                    fontWeight: "bold",
+                    marginTop: "4px",
+                  }}
+                >
+                  {invoice.amount}
+                </div>
+              </div>
+              <div>
+                <label
+                  style={{
+                    fontSize: "12px",
+                    color: "#9ca3af",
+                    textTransform: "uppercase",
+                    fontWeight: "600",
+                  }}
+                >
+                  Statut
+                </label>
+                <div style={{ marginTop: "4px" }}>
+                  <span
+                    style={{
+                      padding: "6px 12px",
+                      borderRadius: "8px",
+                      fontSize: "14px",
+                      fontWeight: "500",
+                      background:
+                        invoice.status === "paid"
+                          ? "#10b98120"
+                          : invoice.status === "sent"
+                          ? "#3b82f620"
+                          : invoice.status === "overdue"
+                          ? "#ef444420"
+                          : "#9ca3af20",
+                      color:
+                        invoice.status === "paid"
+                          ? "#10b981"
+                          : invoice.status === "sent"
+                          ? "#3b82f6"
+                          : invoice.status === "overdue"
+                          ? "#ef4444"
+                          : "#9ca3af",
+                      border: `1px solid ${
+                        invoice.status === "paid"
+                          ? "#10b98140"
+                          : invoice.status === "sent"
+                          ? "#3b82f640"
+                          : invoice.status === "overdue"
+                          ? "#ef444440"
+                          : "#9ca3af40"
+                      }`,
+                    }}
+                  >
+                    {invoice.status === "paid"
+                      ? "Payée"
+                      : invoice.status === "sent"
+                      ? "Envoyée"
+                      : invoice.status === "overdue"
+                      ? "En retard"
+                      : "Brouillon"}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          {/* Informations client */}
+          <Card>
+            <h3
+              style={{
+                fontSize: "18px",
+                fontWeight: "600",
+                color: "#ffffff",
+                margin: 0,
+                marginBottom: "16px",
+              }}
+            >
+              👤 Informations Client
+            </h3>
+            <div>
+              <label
+                style={{
+                  fontSize: "12px",
+                  color: "#9ca3af",
+                  textTransform: "uppercase",
+                  fontWeight: "600",
+                }}
+              >
+                Nom du client
+              </label>
+              <div
+                style={{
+                  fontSize: "16px",
+                  color: "#ffffff",
+                  fontWeight: "600",
+                  marginTop: "4px",
+                }}
+              >
+                {invoice.client}
+              </div>
+            </div>
+          </Card>
+
+          {/* Actions */}
+          <div
+            style={{
+              display: "flex",
+              gap: "12px",
+              justifyContent: "flex-end",
+              paddingTop: "20px",
+              borderTop: "1px solid rgba(255, 255, 255, 0.1)",
+            }}
+          >
+            <button
+              onClick={onClose}
+              style={{
+                background: "rgba(255, 255, 255, 0.1)",
+                border: "1px solid rgba(255, 255, 255, 0.2)",
+                color: "#ffffff",
+                padding: "10px 20px",
+                borderRadius: "8px",
+                fontSize: "14px",
+                cursor: "pointer",
+              }}
+            >
+              Fermer
+            </button>
+            <button
+              style={{
+                background: "linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)",
+                border: "none",
+                color: "#ffffff",
+                padding: "10px 20px",
+                borderRadius: "8px",
+                fontSize: "14px",
+                fontWeight: "600",
+                cursor: "pointer",
+              }}
+            >
+              📧 Envoyer par email
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Composant Modal de confirmation de suppression
+const DeleteConfirmModal = ({
+  isOpen,
+  onClose,
+  onConfirm,
+  invoice,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+  invoice: any | null;
+}) => {
+  if (!isOpen || !invoice) return null;
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: "rgba(0, 0, 0, 0.7)",
+        backdropFilter: "blur(5px)",
+        zIndex: 1000,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "20px",
+      }}
+    >
+      <div
+        style={{
+          background:
+            "linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #16213e 100%)",
+          border: "1px solid rgba(255, 255, 255, 0.2)",
+          borderRadius: "20px",
+          padding: "32px",
+          maxWidth: "500px",
+          width: "100%",
+          textAlign: "center",
+        }}
+      >
+        {/* Icône d'avertissement */}
+        <div
+          style={{
+            fontSize: "48px",
+            marginBottom: "16px",
+          }}
+        >
+          ⚠️
+        </div>
+
+        <h2
+          style={{
+            fontSize: "24px",
+            fontWeight: "bold",
+            color: "#ffffff",
+            margin: 0,
+            marginBottom: "12px",
+          }}
+        >
+          Supprimer la facture
+        </h2>
+
+        <p
+          style={{
+            fontSize: "16px",
+            color: "#d1d5db",
+            margin: 0,
+            marginBottom: "8px",
+          }}
+        >
+          Êtes-vous sûr de vouloir supprimer la facture
+        </p>
+
+        <p
+          style={{
+            fontSize: "18px",
+            color: "#ffffff",
+            fontWeight: "600",
+            margin: 0,
+            marginBottom: "24px",
+          }}
+        >
+          {invoice.number} ?
+        </p>
+
+        <p
+          style={{
+            fontSize: "14px",
+            color: "#ef4444",
+            margin: 0,
+            marginBottom: "32px",
+          }}
+        >
+          Cette action est irréversible.
+        </p>
+
+        {/* Boutons */}
+        <div
+          style={{
+            display: "flex",
+            gap: "12px",
+            justifyContent: "center",
+          }}
+        >
+          <button
+            onClick={onClose}
+            style={{
+              background: "rgba(255, 255, 255, 0.1)",
+              border: "1px solid rgba(255, 255, 255, 0.2)",
+              color: "#ffffff",
+              padding: "12px 24px",
+              borderRadius: "8px",
+              fontSize: "14px",
+              cursor: "pointer",
+              fontWeight: "500",
+            }}
+          >
+            Annuler
+          </button>
+          <button
+            onClick={onConfirm}
+            style={{
+              background: "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
+              border: "none",
+              color: "#ffffff",
+              padding: "12px 24px",
+              borderRadius: "8px",
+              fontSize: "14px",
+              fontWeight: "600",
+              cursor: "pointer",
+            }}
+          >
+            🗑️ Supprimer
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Composant pour les filtres et recherche
 const InvoiceFilters = ({
   searchTerm,
@@ -587,13 +1061,45 @@ const InvoiceFilters = ({
                 color: "#ffffff",
                 fontSize: "14px",
                 outline: "none",
+                appearance: "none",
+                backgroundImage:
+                  'url(\'data:image/svg+xml;charset=US-ASCII,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4 5"><path fill="%23ffffff" d="M2 0L0 2h4zm0 5L0 3h4z"/></svg>\')',
+                backgroundRepeat: "no-repeat",
+                backgroundPosition: "right 8px center",
+                backgroundSize: "12px",
+                paddingRight: "32px",
               }}
             >
-              <option value="">Tous les statuts</option>
-              <option value="draft">Brouillon</option>
-              <option value="sent">Envoyée</option>
-              <option value="paid">Payée</option>
-              <option value="overdue">En retard</option>
+              <option
+                value=""
+                style={{ background: "#1a1a2e", color: "#ffffff" }}
+              >
+                Tous les statuts
+              </option>
+              <option
+                value="draft"
+                style={{ background: "#1a1a2e", color: "#ffffff" }}
+              >
+                Brouillon
+              </option>
+              <option
+                value="sent"
+                style={{ background: "#1a1a2e", color: "#ffffff" }}
+              >
+                Envoyée
+              </option>
+              <option
+                value="paid"
+                style={{ background: "#1a1a2e", color: "#ffffff" }}
+              >
+                Payée
+              </option>
+              <option
+                value="overdue"
+                style={{ background: "#1a1a2e", color: "#ffffff" }}
+              >
+                En retard
+              </option>
             </select>
           </div>
         </div>
@@ -603,7 +1109,33 @@ const InvoiceFilters = ({
 };
 
 // Composant pour une ligne de facture
-const InvoiceRow = ({ invoice }: { invoice: any }) => {
+const InvoiceRow = ({
+  invoice,
+  onViewDetails,
+  onEdit,
+  onDuplicate,
+  onDelete,
+}: {
+  invoice: any;
+  onViewDetails: (invoice: any) => void;
+  onEdit: (invoice: any) => void;
+  onDuplicate: (invoice: any) => void;
+  onDelete: (invoice: any) => void;
+}) => {
+  const [showActionsMenu, setShowActionsMenu] = useState(false);
+
+  // Fermer le menu quand on clique ailleurs
+  React.useEffect(() => {
+    const handleClickOutside = () => {
+      setShowActionsMenu(false);
+    };
+
+    if (showActionsMenu) {
+      document.addEventListener("click", handleClickOutside);
+      return () => document.removeEventListener("click", handleClickOutside);
+    }
+  }, [showActionsMenu]);
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "paid":
@@ -714,9 +1246,11 @@ const InvoiceRow = ({ invoice }: { invoice: any }) => {
         style={{
           display: "flex",
           gap: "8px",
+          position: "relative",
         }}
       >
         <button
+          onClick={() => onViewDetails(invoice)}
           style={{
             background: "rgba(255, 255, 255, 0.1)",
             border: "1px solid rgba(255, 255, 255, 0.2)",
@@ -725,11 +1259,19 @@ const InvoiceRow = ({ invoice }: { invoice: any }) => {
             borderRadius: "6px",
             fontSize: "12px",
             cursor: "pointer",
+            transition: "all 0.2s ease",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "rgba(255, 255, 255, 0.2)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "rgba(255, 255, 255, 0.1)";
           }}
         >
           👁️
         </button>
         <button
+          onClick={() => onEdit(invoice)}
           style={{
             background: "rgba(255, 255, 255, 0.1)",
             border: "1px solid rgba(255, 255, 255, 0.2)",
@@ -738,23 +1280,121 @@ const InvoiceRow = ({ invoice }: { invoice: any }) => {
             borderRadius: "6px",
             fontSize: "12px",
             cursor: "pointer",
+            transition: "all 0.2s ease",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "rgba(255, 255, 255, 0.2)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "rgba(255, 255, 255, 0.1)";
           }}
         >
           ✏️
         </button>
-        <button
-          style={{
-            background: "rgba(255, 255, 255, 0.1)",
-            border: "1px solid rgba(255, 255, 255, 0.2)",
-            color: "#ffffff",
-            padding: "6px 8px",
-            borderRadius: "6px",
-            fontSize: "12px",
-            cursor: "pointer",
-          }}
-        >
-          ⋯
-        </button>
+        <div style={{ position: "relative" }}>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowActionsMenu(!showActionsMenu);
+            }}
+            style={{
+              background: "rgba(255, 255, 255, 0.1)",
+              border: "1px solid rgba(255, 255, 255, 0.2)",
+              color: "#ffffff",
+              padding: "6px 8px",
+              borderRadius: "6px",
+              fontSize: "12px",
+              cursor: "pointer",
+              transition: "all 0.2s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "rgba(255, 255, 255, 0.2)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "rgba(255, 255, 255, 0.1)";
+            }}
+          >
+            ⋯
+          </button>
+
+          {/* Menu déroulant */}
+          {showActionsMenu && (
+            <div
+              style={{
+                position: "absolute",
+                top: "100%",
+                right: 0,
+                marginTop: "4px",
+                background: "linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 100%)",
+                border: "1px solid rgba(255, 255, 255, 0.2)",
+                borderRadius: "8px",
+                padding: "8px",
+                minWidth: "150px",
+                zIndex: 1000,
+                boxShadow: "0 4px 12px rgba(0, 0, 0, 0.3)",
+              }}
+            >
+              <button
+                onClick={() => {
+                  onDuplicate(invoice);
+                  setShowActionsMenu(false);
+                }}
+                style={{
+                  width: "100%",
+                  background: "transparent",
+                  border: "none",
+                  color: "#ffffff",
+                  padding: "8px 12px",
+                  borderRadius: "6px",
+                  fontSize: "14px",
+                  cursor: "pointer",
+                  textAlign: "left",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  transition: "all 0.2s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "rgba(255, 255, 255, 0.1)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "transparent";
+                }}
+              >
+                📋 Dupliquer
+              </button>
+              <button
+                onClick={() => {
+                  onDelete(invoice);
+                  setShowActionsMenu(false);
+                }}
+                style={{
+                  width: "100%",
+                  background: "transparent",
+                  border: "none",
+                  color: "#ef4444",
+                  padding: "8px 12px",
+                  borderRadius: "6px",
+                  fontSize: "14px",
+                  cursor: "pointer",
+                  textAlign: "left",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  transition: "all 0.2s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "rgba(239, 68, 68, 0.1)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "transparent";
+                }}
+              >
+                🗑️ Supprimer
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -764,9 +1404,17 @@ const InvoiceRow = ({ invoice }: { invoice: any }) => {
 const InvoiceList = ({
   invoices,
   onCreateClick,
+  onViewDetails,
+  onEdit,
+  onDuplicate,
+  onDelete,
 }: {
   invoices: any[];
   onCreateClick: () => void;
+  onViewDetails: (invoice: any) => void;
+  onEdit: (invoice: any) => void;
+  onDuplicate: (invoice: any) => void;
+  onDelete: (invoice: any) => void;
 }) => {
   if (invoices.length === 0) {
     return (
@@ -901,7 +1549,14 @@ const InvoiceList = ({
         }}
       >
         {invoices.map((invoice) => (
-          <InvoiceRow key={invoice.id} invoice={invoice} />
+          <InvoiceRow
+            key={invoice.id}
+            invoice={invoice}
+            onViewDetails={onViewDetails}
+            onEdit={onEdit}
+            onDuplicate={onDuplicate}
+            onDelete={onDelete}
+          />
         ))}
       </div>
     </Card>
@@ -914,9 +1569,13 @@ export default function FacturesPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
+  const router = useRouter();
 
-  // Données d'exemple
-  const allInvoices = [
+  // État pour les factures (maintenant dynamique)
+  const [allInvoices, setAllInvoices] = useState([
     {
       id: 1,
       number: "FAC-2024-001",
@@ -957,7 +1616,52 @@ export default function FacturesPage() {
       amount: "890.00 €",
       status: "paid",
     },
-  ];
+  ]);
+
+  const handleProfileClick = () => {
+    router.push("/dashboard/compte");
+  };
+
+  const handleInvoiceCreated = (newInvoice: any) => {
+    setAllInvoices((prev) => [newInvoice, ...prev]); // Ajouter en début de liste
+  };
+
+  // Fonctions de gestion des actions sur les factures
+  const handleViewDetails = (invoice: any) => {
+    setSelectedInvoice(invoice);
+    setIsDetailsModalOpen(true);
+  };
+
+  const handleEdit = (invoice: any) => {
+    // Pour l'instant, on redirige vers une page d'édition (à créer)
+    router.push(`/dashboard/factures/edit/${invoice.id}`);
+  };
+
+  const handleDuplicate = (invoice: any) => {
+    const duplicatedInvoice = {
+      ...invoice,
+      id: Date.now(), // Nouvel ID
+      number: `FAC-2024-${String(Date.now()).slice(-3)}`, // Nouveau numéro
+      status: "draft", // Statut brouillon par défaut
+      date: new Date().toLocaleDateString("fr-FR"), // Date actuelle
+    };
+    setAllInvoices((prev) => [duplicatedInvoice, ...prev]);
+  };
+
+  const handleDelete = (invoice: any) => {
+    setSelectedInvoice(invoice);
+    setIsDeleteModalOpen(true);
+  };
+
+  const confirmDelete = () => {
+    if (selectedInvoice) {
+      setAllInvoices((prev) =>
+        prev.filter((inv) => inv.id !== selectedInvoice.id)
+      );
+      setIsDeleteModalOpen(false);
+      setSelectedInvoice(null);
+    }
+  };
 
   // Filtrage des factures
   const filteredInvoices = allInvoices.filter((invoice) => {
@@ -1096,6 +1800,7 @@ export default function FacturesPage() {
 
             {/* Bouton Profil */}
             <button
+              onClick={handleProfileClick}
               style={{
                 width: "36px",
                 height: "36px",
@@ -1208,6 +1913,10 @@ export default function FacturesPage() {
         <InvoiceList
           invoices={filteredInvoices}
           onCreateClick={() => setIsCreateModalOpen(true)}
+          onViewDetails={handleViewDetails}
+          onEdit={handleEdit}
+          onDuplicate={handleDuplicate}
+          onDelete={handleDelete}
         />
       </main>
 
@@ -1215,6 +1924,28 @@ export default function FacturesPage() {
       <CreateInvoiceModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
+        onInvoiceCreated={handleInvoiceCreated}
+      />
+
+      {/* Modal de détails de facture */}
+      <InvoiceDetailsModal
+        isOpen={isDetailsModalOpen}
+        onClose={() => {
+          setIsDetailsModalOpen(false);
+          setSelectedInvoice(null);
+        }}
+        invoice={selectedInvoice}
+      />
+
+      {/* Modal de confirmation de suppression */}
+      <DeleteConfirmModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => {
+          setIsDeleteModalOpen(false);
+          setSelectedInvoice(null);
+        }}
+        onConfirm={confirmDelete}
+        invoice={selectedInvoice}
       />
 
       <style jsx>{`
