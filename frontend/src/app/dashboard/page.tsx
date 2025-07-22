@@ -8,6 +8,7 @@ import {
   formatCurrency,
   type RecentTask,
 } from "@/utils/storage";
+import DataMigration from "@/components/DataMigration";
 
 // Composant Card réutilisable
 const Card = ({
@@ -1237,6 +1238,9 @@ export default function DashboardPage() {
         isOpen={isRevenueModalOpen}
         onClose={() => setIsRevenueModalOpen(false)}
       />
+
+      {/* Composant de migration des données */}
+      <DataMigration />
 
       <style jsx>{`
         @media (min-width: 768px) {

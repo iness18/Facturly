@@ -1,8 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Navigation from "@/components/layout/Navigation";
+import { authService, type LoginCredentials } from "@/services/auth";
 
 interface FormData {
   email: string;
@@ -17,6 +19,7 @@ interface FormErrors {
 }
 
 export default function ConnexionPage() {
+  const router = useRouter();
   const [formData, setFormData] = useState<FormData>({
     email: "",
     password: "",
@@ -74,20 +77,25 @@ export default function ConnexionPage() {
     setErrors({});
 
     try {
-      // Simulation de connexion (à remplacer par une vraie API)
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      const credentials: LoginCredentials = {
+        email: formData.email,
+        password: formData.password,
+        rememberMe: formData.rememberMe,
+      };
 
-      // Simulation d'une vérification des identifiants
-      if (
-        formData.email === "demo@facturly.com" &&
-        formData.password === "demo123"
-      ) {
-        // Connexion réussie
-        window.location.href = "/dashboard";
+      const result = await authService.login(credentials);
+
+      if (result.success && result.user) {
+        // Connexion réussie - rediriger selon le rôle
+        if (result.user.role === "ADMIN") {
+          router.push("/admin");
+        } else {
+          router.push("/dashboard");
+        }
       } else {
         // Identifiants incorrects
         setErrors({
-          general: "Email ou mot de passe incorrect",
+          general: result.error || "Email ou mot de passe incorrect",
         });
       }
     } catch (error) {
