@@ -1,14 +1,17 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 // Composant Card réutilisable
 const Card = ({
   children,
   style = {},
+  onClick,
 }: {
   children: React.ReactNode;
   style?: React.CSSProperties;
+  onClick?: () => void;
 }) => {
   return (
     <div
@@ -21,14 +24,470 @@ const Card = ({
         transition: "all 0.3s ease",
         ...style,
       }}
+      onClick={onClick}
     >
       {children}
     </div>
   );
 };
 
+// Composant Modal Chiffre d'Affaires
+const RevenueModal = ({
+  isOpen,
+  onClose,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+}) => {
+  if (!isOpen) return null;
+
+  // Données d'exemple pour les graphiques
+  const monthlyData = [
+    { month: "Jan", revenue: 800, expenses: 200 },
+    { month: "Fév", revenue: 1200, expenses: 300 },
+    { month: "Mar", revenue: 950, expenses: 250 },
+    { month: "Avr", revenue: 1400, expenses: 350 },
+    { month: "Mai", revenue: 1100, expenses: 280 },
+    { month: "Juin", revenue: 1250, expenses: 320 },
+  ];
+
+  const currentMonth = monthlyData[monthlyData.length - 1];
+  const totalRevenue = monthlyData.reduce((sum, item) => sum + item.revenue, 0);
+  const totalExpenses = monthlyData.reduce(
+    (sum, item) => sum + item.expenses,
+    0
+  );
+  const netProfit = totalRevenue - totalExpenses;
+
+  // Composant graphique simple en barres
+  const BarChart = ({ data }: { data: typeof monthlyData }) => {
+    const maxValue = Math.max(
+      ...data.map((item) => Math.max(item.revenue, item.expenses))
+    );
+
+    return (
+      <div
+        style={{
+          display: "flex",
+          alignItems: "end",
+          gap: "12px",
+          height: "200px",
+          padding: "20px 0",
+        }}
+      >
+        {data.map((item, index) => (
+          <div
+            key={index}
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              flex: 1,
+              gap: "8px",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "end",
+                gap: "4px",
+                height: "150px",
+              }}
+            >
+              {/* Barre revenus */}
+              <div
+                style={{
+                  width: "16px",
+                  height: `${(item.revenue / maxValue) * 150}px`,
+                  background:
+                    "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+                  borderRadius: "2px 2px 0 0",
+                  minHeight: "4px",
+                }}
+              />
+              {/* Barre dépenses */}
+              <div
+                style={{
+                  width: "16px",
+                  height: `${(item.expenses / maxValue) * 150}px`,
+                  background:
+                    "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
+                  borderRadius: "2px 2px 0 0",
+                  minHeight: "4px",
+                }}
+              />
+            </div>
+            <span
+              style={{
+                fontSize: "12px",
+                color: "#9ca3af",
+                fontWeight: "500",
+              }}
+            >
+              {item.month}
+            </span>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  // Graphique en secteurs simple
+  const PieChart = () => {
+    const total = currentMonth.revenue + currentMonth.expenses;
+    const revenuePercentage = (currentMonth.revenue / total) * 100;
+    const expensePercentage = (currentMonth.expenses / total) * 100;
+
+    return (
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          height: "120px",
+        }}
+      >
+        <div
+          style={{
+            width: "100px",
+            height: "100px",
+            borderRadius: "50%",
+            background: `conic-gradient(
+            #10b981 0deg ${revenuePercentage * 3.6}deg,
+            #ef4444 ${revenuePercentage * 3.6}deg 360deg
+          )`,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            position: "relative",
+          }}
+        >
+          <div
+            style={{
+              width: "60px",
+              height: "60px",
+              borderRadius: "50%",
+              background: "linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 100%)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "12px",
+              fontWeight: "bold",
+              color: "#ffffff",
+            }}
+          >
+            {Math.round(revenuePercentage)}%
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: "rgba(0, 0, 0, 0.7)",
+        backdropFilter: "blur(5px)",
+        zIndex: 1000,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "20px",
+      }}
+    >
+      <div
+        style={{
+          background:
+            "linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #16213e 100%)",
+          border: "1px solid rgba(255, 255, 255, 0.2)",
+          borderRadius: "20px",
+          padding: "32px",
+          maxWidth: "900px",
+          width: "100%",
+          maxHeight: "90vh",
+          overflowY: "auto",
+          position: "relative",
+        }}
+      >
+        {/* Header */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginBottom: "32px",
+          }}
+        >
+          <h2
+            style={{
+              fontSize: "28px",
+              fontWeight: "bold",
+              color: "#ffffff",
+              margin: 0,
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+            }}
+          >
+            💰 Analyse Financière
+          </h2>
+          <button
+            onClick={onClose}
+            style={{
+              background: "rgba(255, 255, 255, 0.1)",
+              border: "1px solid rgba(255, 255, 255, 0.2)",
+              borderRadius: "50%",
+              width: "40px",
+              height: "40px",
+              color: "#ffffff",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "18px",
+            }}
+          >
+            ✕
+          </button>
+        </div>
+
+        {/* Résumé financier */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+            gap: "20px",
+            marginBottom: "32px",
+          }}
+        >
+          <Card style={{ textAlign: "center" }}>
+            <div
+              style={{
+                fontSize: "14px",
+                color: "#10b981",
+                fontWeight: "600",
+                marginBottom: "8px",
+                textTransform: "uppercase",
+              }}
+            >
+              💰 Revenus Totaux (6 mois)
+            </div>
+            <div
+              style={{
+                fontSize: "24px",
+                fontWeight: "bold",
+                color: "#ffffff",
+              }}
+            >
+              {totalRevenue.toLocaleString()} €
+            </div>
+          </Card>
+
+          <Card style={{ textAlign: "center" }}>
+            <div
+              style={{
+                fontSize: "14px",
+                color: "#ef4444",
+                fontWeight: "600",
+                marginBottom: "8px",
+                textTransform: "uppercase",
+              }}
+            >
+              📉 Dépenses Totales (6 mois)
+            </div>
+            <div
+              style={{
+                fontSize: "24px",
+                fontWeight: "bold",
+                color: "#ffffff",
+              }}
+            >
+              {totalExpenses.toLocaleString()} €
+            </div>
+          </Card>
+
+          <Card style={{ textAlign: "center" }}>
+            <div
+              style={{
+                fontSize: "14px",
+                color: netProfit > 0 ? "#10b981" : "#ef4444",
+                fontWeight: "600",
+                marginBottom: "8px",
+                textTransform: "uppercase",
+              }}
+            >
+              📊 Bénéfice Net
+            </div>
+            <div
+              style={{
+                fontSize: "24px",
+                fontWeight: "bold",
+                color: "#ffffff",
+              }}
+            >
+              {netProfit.toLocaleString()} €
+            </div>
+          </Card>
+        </div>
+
+        {/* Graphiques */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(400px, 1fr))",
+            gap: "24px",
+          }}
+        >
+          {/* Graphique en barres */}
+          <Card>
+            <h3
+              style={{
+                fontSize: "18px",
+                fontWeight: "600",
+                color: "#ffffff",
+                margin: 0,
+                marginBottom: "20px",
+              }}
+            >
+              📈 Évolution Mensuelle
+            </h3>
+            <BarChart data={monthlyData} />
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                gap: "20px",
+                marginTop: "16px",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  fontSize: "12px",
+                }}
+              >
+                <div
+                  style={{
+                    width: "12px",
+                    height: "12px",
+                    background:
+                      "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+                    borderRadius: "2px",
+                  }}
+                />
+                <span style={{ color: "#d1d5db" }}>Revenus</span>
+              </div>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  fontSize: "12px",
+                }}
+              >
+                <div
+                  style={{
+                    width: "12px",
+                    height: "12px",
+                    background:
+                      "linear-gradient(135deg, #ef4444 0%, #dc2626 100%)",
+                    borderRadius: "2px",
+                  }}
+                />
+                <span style={{ color: "#d1d5db" }}>Dépenses</span>
+              </div>
+            </div>
+          </Card>
+
+          {/* Graphique en secteurs */}
+          <Card>
+            <h3
+              style={{
+                fontSize: "18px",
+                fontWeight: "600",
+                color: "#ffffff",
+                margin: 0,
+                marginBottom: "20px",
+              }}
+            >
+              🥧 Répartition du Mois
+            </h3>
+            <PieChart />
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                marginTop: "20px",
+                padding: "16px",
+                background: "rgba(255, 255, 255, 0.05)",
+                borderRadius: "8px",
+              }}
+            >
+              <div style={{ textAlign: "center" }}>
+                <div
+                  style={{
+                    fontSize: "14px",
+                    color: "#10b981",
+                    fontWeight: "600",
+                  }}
+                >
+                  Revenus
+                </div>
+                <div
+                  style={{
+                    fontSize: "16px",
+                    color: "#ffffff",
+                    fontWeight: "bold",
+                  }}
+                >
+                  {currentMonth.revenue} €
+                </div>
+              </div>
+              <div style={{ textAlign: "center" }}>
+                <div
+                  style={{
+                    fontSize: "14px",
+                    color: "#ef4444",
+                    fontWeight: "600",
+                  }}
+                >
+                  Dépenses
+                </div>
+                <div
+                  style={{
+                    fontSize: "16px",
+                    color: "#ffffff",
+                    fontWeight: "bold",
+                  }}
+                >
+                  {currentMonth.expenses} €
+                </div>
+              </div>
+            </div>
+          </Card>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Composant StatCards
-const StatCards = () => {
+const StatCards = ({
+  onRevenueClick,
+  onInvoicesClick,
+  onClientsClick,
+}: {
+  onRevenueClick: () => void;
+  onInvoicesClick: () => void;
+  onClientsClick: () => void;
+}) => {
   return (
     <div
       style={{
@@ -39,7 +498,7 @@ const StatCards = () => {
       }}
     >
       {/* Carte 1: Chiffre d'affaires */}
-      <Card>
+      <Card style={{ cursor: "pointer" }} onClick={onRevenueClick}>
         <div
           style={{
             display: "flex",
@@ -98,7 +557,7 @@ const StatCards = () => {
       </Card>
 
       {/* Carte 2: Factures en attente */}
-      <Card>
+      <Card style={{ cursor: "pointer" }} onClick={onInvoicesClick}>
         <div
           style={{
             display: "flex",
@@ -157,7 +616,7 @@ const StatCards = () => {
       </Card>
 
       {/* Carte 3: Clients actifs */}
-      <Card>
+      <Card style={{ cursor: "pointer" }} onClick={onClientsClick}>
         <div
           style={{
             display: "flex",
@@ -427,6 +886,24 @@ const RecentActivityFeed = () => {
 // Page Dashboard principale
 export default function DashboardPage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isRevenueModalOpen, setIsRevenueModalOpen] = useState(false);
+  const router = useRouter();
+
+  const handleRevenueClick = () => {
+    setIsRevenueModalOpen(true);
+  };
+
+  const handleInvoicesClick = () => {
+    router.push("/dashboard/factures");
+  };
+
+  const handleClientsClick = () => {
+    router.push("/dashboard/clients");
+  };
+
+  const handleProfileClick = () => {
+    router.push("/dashboard/compte");
+  };
 
   return (
     <div
@@ -522,16 +999,6 @@ export default function DashboardPage() {
             >
               Clients
             </a>
-            <a
-              href="/dashboard/compte"
-              style={{
-                color: "#d1d5db",
-                textDecoration: "none",
-                fontSize: "14px",
-              }}
-            >
-              Mon Compte
-            </a>
           </div>
 
           {/* Actions */}
@@ -561,6 +1028,7 @@ export default function DashboardPage() {
 
             {/* Bouton Profil */}
             <button
+              onClick={handleProfileClick}
               style={{
                 width: "36px",
                 height: "36px",
@@ -629,16 +1097,6 @@ export default function DashboardPage() {
               >
                 Clients
               </a>
-              <a
-                href="/dashboard/compte"
-                style={{
-                  color: "#d1d5db",
-                  textDecoration: "none",
-                  padding: "8px 0",
-                }}
-              >
-                Mon Compte
-              </a>
             </div>
           </div>
         )}
@@ -681,11 +1139,21 @@ export default function DashboardPage() {
         </div>
 
         {/* Statistiques */}
-        <StatCards />
+        <StatCards
+          onRevenueClick={handleRevenueClick}
+          onInvoicesClick={handleInvoicesClick}
+          onClientsClick={handleClientsClick}
+        />
 
         {/* Activité récente */}
         <RecentActivityFeed />
       </main>
+
+      {/* Modal Chiffre d'Affaires */}
+      <RevenueModal
+        isOpen={isRevenueModalOpen}
+        onClose={() => setIsRevenueModalOpen(false)}
+      />
 
       <style jsx>{`
         @media (min-width: 768px) {

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 // Composant Card réutilisable
 const Card = ({
@@ -1066,16 +1067,6 @@ export default function FacturesPage() {
             >
               Clients
             </a>
-            <a
-              href="/dashboard/compte"
-              style={{
-                color: "#d1d5db",
-                textDecoration: "none",
-                fontSize: "14px",
-              }}
-            >
-              Mon Compte
-            </a>
           </div>
 
           {/* Actions */}
@@ -1172,16 +1163,6 @@ export default function FacturesPage() {
                 }}
               >
                 Clients
-              </a>
-              <a
-                href="/dashboard/compte"
-                style={{
-                  color: "#d1d5db",
-                  textDecoration: "none",
-                  padding: "8px 0",
-                }}
-              >
-                Mon Compte
               </a>
             </div>
           </div>
