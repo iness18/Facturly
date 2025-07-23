@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   storageService,
@@ -9,86 +9,26 @@ import {
   type Client,
 } from "@/utils/storage";
 
-// Composant Card réutilisable
-const Card = ({
-  children,
-  style = {},
-}: {
-  children: React.ReactNode;
-  style?: React.CSSProperties;
-}) => {
-  return (
-    <div
-      style={{
-        background: "rgba(255, 255, 255, 0.05)",
-        backdropFilter: "blur(10px)",
-        border: "1px solid rgba(255, 255, 255, 0.1)",
-        borderRadius: "16px",
-        padding: "24px",
-        transition: "all 0.3s ease",
-        ...style,
-      }}
-    >
-      {children}
-    </div>
-  );
-};
-
-// Simulation des données utilisateur (normalement récupérées depuis une API/base de données)
-const getUserCompanyData = () => {
-  // Ces données seraient normalement récupérées depuis le profil utilisateur
-  // connecté ou depuis une API
-  return {
-    companyName: "Iness Br.",
-    companyAddress: "123 Rue de la Facturation",
-    companyPostalCode: "75001",
-    companyCity: "Paris",
-    companySiret: "12345678901234",
-    companyLegalForm: "Micro-entrepreneur",
-    companyPhone: "+33 1 23 45 67 89",
-    companyEmail: "contact@iness-br.com",
-  };
-};
-
-// Page de création de facture complète
-export default function CreateInvoicePage() {
+// Composant principal qui utilise useSearchParams
+function CreateInvoiceContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Vérifier si on est en mode édition
   const editId = searchParams.get("edit");
   const isEditing = !!editId;
-
-  // Vérifier si un client est pré-sélectionné
   const preSelectedClientId = searchParams.get("client");
 
-  // État pour la gestion des clients
   const [clients, setClients] = useState<Client[]>([]);
   const [selectedClientId, setSelectedClientId] = useState<string>("");
 
-  // Récupération automatique des données de l'entreprise
-  const userCompanyData = getUserCompanyData();
-
   const [formData, setFormData] = useState({
-    // 1. Informations vendeur (pré-remplies automatiquement depuis le profil)
-    sellerName: userCompanyData.companyName,
-    sellerAddress: `${userCompanyData.companyAddress}\n${userCompanyData.companyPostalCode} ${userCompanyData.companyCity}`,
-    sellerStatus: userCompanyData.companyLegalForm,
-    sellerSiret: userCompanyData.companySiret,
-    sellerTvaNote: "TVA non applicable, article 293 B du CGI",
-
-    // 2. Informations client
+    sellerName: "Iness Br.",
+    sellerAddress: "123 Rue de la Facturation\n75001 Paris",
+    sellerSiret: "12345678901234",
     clientName: "",
     clientAddress: "",
-    clientSiren: "",
-    clientTvaNumber: "",
-
-    // 3. Informations facture
     invoiceNumber: "",
     issueDate: new Date().toISOString().split("T")[0],
-    serviceDate: "",
-
-    // 4. Détail des prestations
     services: [
       {
         description: "",
@@ -97,56 +37,39 @@ export default function CreateInvoicePage() {
         totalHT: 0,
       },
     ],
-
-    // Totaux
     totalHT: 0,
-    tvaRate: 0,
-    tvaAmount: 0,
     totalTTC: 0,
-
-    // 5. Conditions
     paymentMethod: "virement",
-    paymentDelay: "reception",
-    penaltyClause:
-      "En cas de retard de paiement, des pénalités égales à 3 fois le taux légal seront exigibles, ainsi qu'une indemnité forfaitaire de 40 € (art. L441-10 du Code de commerce).",
   });
 
-  // Charger les clients disponibles
   useEffect(() => {
     const loadedClients = storageService.getClients();
     setClients(loadedClients);
 
-    // Si un client est pré-sélectionné, le définir
     if (preSelectedClientId) {
       setSelectedClientId(preSelectedClientId);
       const selectedClient = loadedClients.find(
         (c) => c.id === preSelectedClientId
       );
       if (selectedClient) {
-        handleClientSelection(selectedClient);
+        setFormData((prev) => ({
+          ...prev,
+          clientName: selectedClient.name,
+          clientAddress: `${selectedClient.address || ""}\n${
+            selectedClient.postalCode || ""
+          } ${selectedClient.city || ""}`.trim(),
+        }));
       }
     }
   }, [preSelectedClientId]);
 
-  // Charger les données de la facture à éditer
   useEffect(() => {
     if (isEditing && editId) {
       const invoices = storageService.getInvoices();
       const invoiceToEdit = invoices.find((inv) => inv.id === editId);
 
       if (invoiceToEdit && invoiceToEdit.fullData) {
-        // Charger les données complètes de la facture
         setFormData(invoiceToEdit.fullData);
-      } else {
-        // Si pas de données complètes, créer à partir des données de base
-        setFormData((prev) => ({
-          ...prev,
-          clientName: invoiceToEdit?.client || "",
-          invoiceNumber: invoiceToEdit?.number || "",
-          issueDate:
-            invoiceToEdit?.date || new Date().toISOString().split("T")[0],
-          totalTTC: parseFloat(invoiceToEdit?.amount || "0"),
-        }));
       }
     }
   }, [isEditing, editId]);
@@ -156,40 +79,6 @@ export default function CreateInvoicePage() {
       ...prev,
       [field]: value,
     }));
-  };
-
-  // Fonction pour gérer la sélection d'un client
-  const handleClientSelection = (client: Client) => {
-    setFormData((prev) => ({
-      ...prev,
-      clientName: client.name,
-      clientAddress: `${client.address || ""}\n${client.postalCode || ""} ${
-        client.city || ""
-      }`.trim(),
-      clientSiren: client.siren || "",
-      clientTvaNumber: client.tvaNumber || "",
-    }));
-  };
-
-  // Fonction pour gérer le changement de client sélectionné
-  const handleClientSelectChange = (clientId: string) => {
-    setSelectedClientId(clientId);
-
-    if (clientId === "") {
-      // Réinitialiser les champs client
-      setFormData((prev) => ({
-        ...prev,
-        clientName: "",
-        clientAddress: "",
-        clientSiren: "",
-        clientTvaNumber: "",
-      }));
-    } else {
-      const selectedClient = clients.find((c) => c.id === clientId);
-      if (selectedClient) {
-        handleClientSelection(selectedClient);
-      }
-    }
   };
 
   const handleServiceChange = (
@@ -203,20 +92,23 @@ export default function CreateInvoicePage() {
       [field]: value,
     };
 
-    // Recalculer le total HT pour cette ligne
     if (field === "quantity" || field === "unitPrice") {
       newServices[index].totalHT =
         Number(newServices[index].quantity) *
         Number(newServices[index].unitPrice);
     }
 
+    const totalHT = newServices.reduce(
+      (sum, service) => sum + Number(service.totalHT),
+      0
+    );
+
     setFormData((prev) => ({
       ...prev,
       services: newServices,
+      totalHT,
+      totalTTC: totalHT,
     }));
-
-    // Recalculer les totaux
-    calculateTotals(newServices);
   };
 
   const addService = () => {
@@ -237,38 +129,25 @@ export default function CreateInvoicePage() {
   const removeService = (index: number) => {
     if (formData.services.length > 1) {
       const newServices = formData.services.filter((_, i) => i !== index);
+      const totalHT = newServices.reduce(
+        (sum, service) => sum + Number(service.totalHT),
+        0
+      );
       setFormData((prev) => ({
         ...prev,
         services: newServices,
+        totalHT,
+        totalTTC: totalHT,
       }));
-      calculateTotals(newServices);
     }
-  };
-
-  const calculateTotals = (services: any[]) => {
-    const totalHT = services.reduce(
-      (sum, service) => sum + Number(service.totalHT),
-      0
-    );
-    const tvaAmount = totalHT * (Number(formData.tvaRate) / 100);
-    const totalTTC = totalHT + tvaAmount;
-
-    setFormData((prev) => ({
-      ...prev,
-      totalHT,
-      tvaAmount,
-      totalTTC,
-    }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Générer le numéro de facture si pas défini
     const invoiceNumber = formData.invoiceNumber || generateInvoiceNum();
 
     if (isEditing && editId) {
-      // Mode édition : mettre à jour la facture existante
       const invoices = storageService.getInvoices();
       const existingInvoice = invoices.find((inv) => inv.id === editId);
 
@@ -285,12 +164,9 @@ export default function CreateInvoicePage() {
           },
         };
 
-        // Mettre à jour la facture
         storageService.saveInvoice(updatedInvoice);
-        console.log("Facture mise à jour:", updatedInvoice);
       }
     } else {
-      // Mode création : créer une nouvelle facture
       const newInvoice: Invoice = {
         id: `invoice_${Date.now()}`,
         number: invoiceNumber,
@@ -305,12 +181,9 @@ export default function CreateInvoicePage() {
         },
       };
 
-      // Sauvegarder la facture
       storageService.saveInvoice(newInvoice);
-      console.log("Nouvelle facture créée et sauvegardée:", newInvoice);
     }
 
-    // Rediriger vers la page des factures
     router.push("/dashboard/factures");
   };
 
@@ -325,7 +198,6 @@ export default function CreateInvoicePage() {
           'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       }}
     >
-      {/* Navigation */}
       <nav
         style={{
           position: "sticky",
@@ -344,47 +216,38 @@ export default function CreateInvoicePage() {
             padding: "12px 16px",
             display: "flex",
             alignItems: "center",
-            justifyContent: "space-between",
+            gap: "16px",
           }}
         >
-          <div
+          <a
+            href="/dashboard"
             style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "16px",
+              fontSize: "20px",
+              fontWeight: "bold",
+              color: "#ffffff",
+              textDecoration: "none",
             }}
           >
-            <a
-              href="/dashboard"
-              style={{
-                fontSize: "20px",
-                fontWeight: "bold",
-                color: "#ffffff",
-                textDecoration: "none",
-              }}
-            >
-              Facturly
-            </a>
-            <span style={{ color: "#9ca3af" }}>→</span>
-            <a
-              href="/dashboard/factures"
-              style={{
-                color: "#9ca3af",
-                textDecoration: "none",
-                fontSize: "14px",
-              }}
-            >
-              Factures
-            </a>
-            <span style={{ color: "#9ca3af" }}>→</span>
-            <span style={{ color: "#ffffff", fontSize: "14px" }}>
-              {isEditing ? "Modifier facture" : "Nouvelle facture"}
-            </span>
-          </div>
+            Facturly
+          </a>
+          <span style={{ color: "#9ca3af" }}>→</span>
+          <a
+            href="/dashboard/factures"
+            style={{
+              color: "#9ca3af",
+              textDecoration: "none",
+              fontSize: "14px",
+            }}
+          >
+            Factures
+          </a>
+          <span style={{ color: "#9ca3af" }}>→</span>
+          <span style={{ color: "#ffffff", fontSize: "14px" }}>
+            {isEditing ? "Modifier facture" : "Nouvelle facture"}
+          </span>
         </div>
       </nav>
 
-      {/* Contenu principal */}
       <main
         style={{
           maxWidth: "1000px",
@@ -392,7 +255,6 @@ export default function CreateInvoicePage() {
           padding: "20px 16px",
         }}
       >
-        {/* Titre */}
         <div style={{ marginBottom: "32px" }}>
           <h1
             style={{
@@ -405,73 +267,37 @@ export default function CreateInvoicePage() {
           >
             📄 {isEditing ? "Modifier la Facture" : "Nouvelle Facture"}
           </h1>
-          <p
-            style={{
-              color: "#9ca3af",
-              fontSize: "16px",
-              margin: 0,
-            }}
-          >
-            {isEditing
-              ? "Modifiez votre facture conforme à la réglementation française"
-              : "Créez une facture conforme à la réglementation française"}
-          </p>
         </div>
 
-        {/* Formulaire */}
         <form onSubmit={handleSubmit}>
           <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "32px",
-            }}
+            style={{ display: "flex", flexDirection: "column", gap: "32px" }}
           >
-            {/* 1. Informations vendeur */}
-            <Card>
-              <div
+            {/* Informations vendeur */}
+            <div
+              style={{
+                background: "rgba(255, 255, 255, 0.05)",
+                backdropFilter: "blur(10px)",
+                border: "1px solid rgba(255, 255, 255, 0.1)",
+                borderRadius: "16px",
+                padding: "24px",
+              }}
+            >
+              <h2
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
+                  fontSize: "20px",
+                  fontWeight: "600",
+                  color: "#ffffff",
                   marginBottom: "20px",
                 }}
               >
-                <h2
-                  style={{
-                    fontSize: "20px",
-                    fontWeight: "600",
-                    color: "#ffffff",
-                    margin: 0,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                  }}
-                >
-                  🏢 1. Informations Vendeur/Prestataire
-                </h2>
-                <div
-                  style={{
-                    padding: "6px 12px",
-                    background: "rgba(16, 185, 129, 0.1)",
-                    border: "1px solid rgba(16, 185, 129, 0.3)",
-                    borderRadius: "6px",
-                    fontSize: "12px",
-                    color: "#10b981",
-                    fontWeight: "500",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "4px",
-                  }}
-                >
-                  ✅ Récupéré automatiquement
-                </div>
-              </div>
+                🏢 Informations Vendeur
+              </h2>
 
               <div
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+                  gridTemplateColumns: "1fr 1fr",
                   gap: "20px",
                   marginBottom: "20px",
                 }}
@@ -504,60 +330,9 @@ export default function CreateInvoicePage() {
                       color: "#ffffff",
                       fontSize: "14px",
                       outline: "none",
+                      boxSizing: "border-box",
                     }}
                   />
-                </div>
-
-                <div>
-                  <label
-                    style={{
-                      display: "block",
-                      fontSize: "14px",
-                      fontWeight: "600",
-                      color: "#9ca3af",
-                      marginBottom: "8px",
-                    }}
-                  >
-                    Statut juridique *
-                  </label>
-                  <select
-                    value={formData.sellerStatus}
-                    onChange={(e) =>
-                      handleInputChange("sellerStatus", e.target.value)
-                    }
-                    style={{
-                      width: "100%",
-                      padding: "12px 16px",
-                      background: "rgba(255, 255, 255, 0.05)",
-                      border: "1px solid rgba(255, 255, 255, 0.2)",
-                      borderRadius: "8px",
-                      color: "#ffffff",
-                      fontSize: "14px",
-                      outline: "none",
-                    }}
-                  >
-                    <option
-                      value="Micro-entrepreneur"
-                      style={{ background: "#1a1a2e" }}
-                    >
-                      Micro-entrepreneur
-                    </option>
-                    <option value="EI" style={{ background: "#1a1a2e" }}>
-                      Entreprise Individuelle (EI)
-                    </option>
-                    <option value="EURL" style={{ background: "#1a1a2e" }}>
-                      EURL
-                    </option>
-                    <option value="SARL" style={{ background: "#1a1a2e" }}>
-                      SARL
-                    </option>
-                    <option value="SAS" style={{ background: "#1a1a2e" }}>
-                      SAS
-                    </option>
-                    <option value="SASU" style={{ background: "#1a1a2e" }}>
-                      SASU
-                    </option>
-                  </select>
                 </div>
 
                 <div>
@@ -579,7 +354,6 @@ export default function CreateInvoicePage() {
                     onChange={(e) =>
                       handleInputChange("sellerSiret", e.target.value)
                     }
-                    placeholder="12345678901234"
                     style={{
                       width: "100%",
                       padding: "12px 16px",
@@ -589,12 +363,13 @@ export default function CreateInvoicePage() {
                       color: "#ffffff",
                       fontSize: "14px",
                       outline: "none",
+                      boxSizing: "border-box",
                     }}
                   />
                 </div>
               </div>
 
-              <div style={{ marginBottom: "20px" }}>
+              <div>
                 <label
                   style={{
                     display: "block",
@@ -624,148 +399,38 @@ export default function CreateInvoicePage() {
                     outline: "none",
                     resize: "vertical",
                     fontFamily: "inherit",
+                    boxSizing: "border-box",
                   }}
                 />
               </div>
+            </div>
 
-              <div
+            {/* Informations client */}
+            <div
+              style={{
+                background: "rgba(255, 255, 255, 0.05)",
+                backdropFilter: "blur(10px)",
+                border: "1px solid rgba(255, 255, 255, 0.1)",
+                borderRadius: "16px",
+                padding: "24px",
+              }}
+            >
+              <h2
                 style={{
-                  padding: "16px",
-                  background: "rgba(59, 130, 246, 0.1)",
-                  border: "1px solid rgba(59, 130, 246, 0.3)",
-                  borderRadius: "8px",
-                }}
-              >
-                <div
-                  style={{
-                    color: "#3b82f6",
-                    fontSize: "14px",
-                    fontWeight: "500",
-                    marginBottom: "4px",
-                  }}
-                >
-                  💡 Informations automatiques
-                </div>
-                <div style={{ color: "#d1d5db", fontSize: "14px" }}>
-                  Ces informations sont automatiquement récupérées depuis votre
-                  profil d'entreprise.
-                  <br />
-                  <strong>Mention TVA :</strong> {formData.sellerTvaNote}
-                </div>
-              </div>
-            </Card>
-
-            {/* 2. Informations client */}
-            <Card>
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
+                  fontSize: "20px",
+                  fontWeight: "600",
+                  color: "#ffffff",
                   marginBottom: "20px",
                 }}
               >
-                <h2
-                  style={{
-                    fontSize: "20px",
-                    fontWeight: "600",
-                    color: "#ffffff",
-                    margin: 0,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
-                  }}
-                >
-                  👤 2. Informations Client
-                </h2>
-                <a
-                  href="/dashboard/clients/create"
-                  style={{
-                    background: "rgba(139, 92, 246, 0.1)",
-                    border: "1px solid rgba(139, 92, 246, 0.3)",
-                    color: "#8b5cf6",
-                    padding: "6px 12px",
-                    borderRadius: "6px",
-                    fontSize: "12px",
-                    fontWeight: "500",
-                    textDecoration: "none",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "4px",
-                  }}
-                >
-                  ➕ Nouveau client
-                </a>
-              </div>
-
-              {/* Sélecteur de client existant */}
-              {clients.length > 0 && (
-                <div style={{ marginBottom: "20px" }}>
-                  <label
-                    style={{
-                      display: "block",
-                      fontSize: "14px",
-                      fontWeight: "600",
-                      color: "#9ca3af",
-                      marginBottom: "8px",
-                    }}
-                  >
-                    Sélectionner un client existant
-                  </label>
-                  <select
-                    value={selectedClientId}
-                    onChange={(e) => handleClientSelectChange(e.target.value)}
-                    style={{
-                      width: "100%",
-                      padding: "12px 16px",
-                      background: "rgba(255, 255, 255, 0.05)",
-                      border: "1px solid rgba(255, 255, 255, 0.2)",
-                      borderRadius: "8px",
-                      color: "#ffffff",
-                      fontSize: "14px",
-                      outline: "none",
-                      marginBottom: "16px",
-                    }}
-                  >
-                    <option value="" style={{ background: "#1a1a2e" }}>
-                      -- Saisir manuellement ou sélectionner un client --
-                    </option>
-                    {clients.map((client) => (
-                      <option
-                        key={client.id}
-                        value={client.id}
-                        style={{ background: "#1a1a2e" }}
-                      >
-                        {client.name}{" "}
-                        {client.company ? `(${client.company})` : ""}
-                      </option>
-                    ))}
-                  </select>
-                  {selectedClientId && (
-                    <div
-                      style={{
-                        padding: "12px 16px",
-                        background: "rgba(16, 185, 129, 0.1)",
-                        border: "1px solid rgba(16, 185, 129, 0.3)",
-                        borderRadius: "8px",
-                        fontSize: "14px",
-                        color: "#10b981",
-                        marginBottom: "16px",
-                      }}
-                    >
-                      ✅ Client sélectionné - Les informations ont été
-                      pré-remplies automatiquement
-                    </div>
-                  )}
-                </div>
-              )}
+                👤 Informations Client
+              </h2>
 
               <div
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+                  gridTemplateColumns: "1fr",
                   gap: "20px",
-                  marginBottom: "20px",
                 }}
               >
                 <div>
@@ -787,7 +452,6 @@ export default function CreateInvoicePage() {
                     onChange={(e) =>
                       handleInputChange("clientName", e.target.value)
                     }
-                    placeholder="Ex: ABC Corporation"
                     style={{
                       width: "100%",
                       padding: "12px 16px",
@@ -797,6 +461,7 @@ export default function CreateInvoicePage() {
                       color: "#ffffff",
                       fontSize: "14px",
                       outline: "none",
+                      boxSizing: "border-box",
                     }}
                   />
                 </div>
@@ -811,15 +476,15 @@ export default function CreateInvoicePage() {
                       marginBottom: "8px",
                     }}
                   >
-                    N° SIREN (si professionnel)
+                    Adresse *
                   </label>
-                  <input
-                    type="text"
-                    value={formData.clientSiren}
+                  <textarea
+                    required
+                    value={formData.clientAddress}
                     onChange={(e) =>
-                      handleInputChange("clientSiren", e.target.value)
+                      handleInputChange("clientAddress", e.target.value)
                     }
-                    placeholder="123456789"
+                    rows={3}
                     style={{
                       width: "100%",
                       padding: "12px 16px",
@@ -829,99 +494,40 @@ export default function CreateInvoicePage() {
                       color: "#ffffff",
                       fontSize: "14px",
                       outline: "none",
-                    }}
-                  />
-                </div>
-
-                <div>
-                  <label
-                    style={{
-                      display: "block",
-                      fontSize: "14px",
-                      fontWeight: "600",
-                      color: "#9ca3af",
-                      marginBottom: "8px",
-                    }}
-                  >
-                    N° TVA intracom (si UE)
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.clientTvaNumber}
-                    onChange={(e) =>
-                      handleInputChange("clientTvaNumber", e.target.value)
-                    }
-                    placeholder="FR12345678901"
-                    style={{
-                      width: "100%",
-                      padding: "12px 16px",
-                      background: "rgba(255, 255, 255, 0.05)",
-                      border: "1px solid rgba(255, 255, 255, 0.2)",
-                      borderRadius: "8px",
-                      color: "#ffffff",
-                      fontSize: "14px",
-                      outline: "none",
+                      resize: "vertical",
+                      fontFamily: "inherit",
+                      boxSizing: "border-box",
                     }}
                   />
                 </div>
               </div>
+            </div>
 
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    fontSize: "14px",
-                    fontWeight: "600",
-                    color: "#9ca3af",
-                    marginBottom: "8px",
-                  }}
-                >
-                  Adresse du siège social *
-                </label>
-                <textarea
-                  required
-                  value={formData.clientAddress}
-                  onChange={(e) =>
-                    handleInputChange("clientAddress", e.target.value)
-                  }
-                  placeholder="123 Rue du Client, 75001 Paris"
-                  rows={3}
-                  style={{
-                    width: "100%",
-                    padding: "12px 16px",
-                    background: "rgba(255, 255, 255, 0.05)",
-                    border: "1px solid rgba(255, 255, 255, 0.2)",
-                    borderRadius: "8px",
-                    color: "#ffffff",
-                    fontSize: "14px",
-                    outline: "none",
-                    resize: "vertical",
-                    fontFamily: "inherit",
-                  }}
-                />
-              </div>
-            </Card>
-
-            {/* 3. Informations facture */}
-            <Card>
+            {/* Informations facture */}
+            <div
+              style={{
+                background: "rgba(255, 255, 255, 0.05)",
+                backdropFilter: "blur(10px)",
+                border: "1px solid rgba(255, 255, 255, 0.1)",
+                borderRadius: "16px",
+                padding: "24px",
+              }}
+            >
               <h2
                 style={{
                   fontSize: "20px",
                   fontWeight: "600",
                   color: "#ffffff",
                   marginBottom: "20px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
                 }}
               >
-                📄 3. Informations sur la Facture
+                📄 Informations Facture
               </h2>
 
               <div
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
+                  gridTemplateColumns: "1fr 1fr",
                   gap: "20px",
                 }}
               >
@@ -935,7 +541,7 @@ export default function CreateInvoicePage() {
                       marginBottom: "8px",
                     }}
                   >
-                    Numéro de facture *
+                    Numéro de facture
                   </label>
                   <input
                     type="text"
@@ -953,17 +559,9 @@ export default function CreateInvoicePage() {
                       color: "#ffffff",
                       fontSize: "14px",
                       outline: "none",
+                      boxSizing: "border-box",
                     }}
                   />
-                  <div
-                    style={{
-                      fontSize: "12px",
-                      color: "#9ca3af",
-                      marginTop: "4px",
-                    }}
-                  >
-                    Doit être unique et chronologique
-                  </div>
                 </div>
 
                 <div>
@@ -994,54 +592,23 @@ export default function CreateInvoicePage() {
                       color: "#ffffff",
                       fontSize: "14px",
                       outline: "none",
+                      boxSizing: "border-box",
                     }}
                   />
-                </div>
-
-                <div>
-                  <label
-                    style={{
-                      display: "block",
-                      fontSize: "14px",
-                      fontWeight: "600",
-                      color: "#9ca3af",
-                      marginBottom: "8px",
-                    }}
-                  >
-                    Date de prestation
-                  </label>
-                  <input
-                    type="date"
-                    value={formData.serviceDate}
-                    onChange={(e) =>
-                      handleInputChange("serviceDate", e.target.value)
-                    }
-                    style={{
-                      width: "100%",
-                      padding: "12px 16px",
-                      background: "rgba(255, 255, 255, 0.05)",
-                      border: "1px solid rgba(255, 255, 255, 0.2)",
-                      borderRadius: "8px",
-                      color: "#ffffff",
-                      fontSize: "14px",
-                      outline: "none",
-                    }}
-                  />
-                  <div
-                    style={{
-                      fontSize: "12px",
-                      color: "#9ca3af",
-                      marginTop: "4px",
-                    }}
-                  >
-                    Si différente de la date de facture
-                  </div>
                 </div>
               </div>
-            </Card>
+            </div>
 
-            {/* 4. Détail des prestations */}
-            <Card>
+            {/* Prestations */}
+            <div
+              style={{
+                background: "rgba(255, 255, 255, 0.05)",
+                backdropFilter: "blur(10px)",
+                border: "1px solid rgba(255, 255, 255, 0.1)",
+                borderRadius: "16px",
+                padding: "24px",
+              }}
+            >
               <div
                 style={{
                   display: "flex",
@@ -1056,12 +623,9 @@ export default function CreateInvoicePage() {
                     fontWeight: "600",
                     color: "#ffffff",
                     margin: 0,
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "8px",
                   }}
                 >
-                  🛍️ 4. Détail des Prestations
+                  🛍️ Prestations
                 </h2>
                 <button
                   type="button"
@@ -1076,12 +640,9 @@ export default function CreateInvoicePage() {
                     fontSize: "14px",
                     fontWeight: "600",
                     cursor: "pointer",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "6px",
                   }}
                 >
-                  ➕ Ajouter une ligne
+                  ➕ Ajouter
                 </button>
               </div>
 
@@ -1138,7 +699,6 @@ export default function CreateInvoicePage() {
                       display: "grid",
                       gridTemplateColumns: "2fr 1fr 1fr 1fr",
                       gap: "16px",
-                      alignItems: "end",
                     }}
                   >
                     <div>
@@ -1163,7 +723,6 @@ export default function CreateInvoicePage() {
                             e.target.value
                           )
                         }
-                        placeholder="Ex: Conception site web vitrine"
                         rows={2}
                         style={{
                           width: "100%",
@@ -1176,6 +735,7 @@ export default function CreateInvoicePage() {
                           outline: "none",
                           resize: "vertical",
                           fontFamily: "inherit",
+                          boxSizing: "border-box",
                         }}
                       />
                     </div>
@@ -1214,6 +774,7 @@ export default function CreateInvoicePage() {
                           color: "#ffffff",
                           fontSize: "14px",
                           outline: "none",
+                          boxSizing: "border-box",
                         }}
                       />
                     </div>
@@ -1228,7 +789,7 @@ export default function CreateInvoicePage() {
                           marginBottom: "8px",
                         }}
                       >
-                        Prix unitaire HT *
+                        Prix unitaire *
                       </label>
                       <input
                         type="number"
@@ -1252,6 +813,7 @@ export default function CreateInvoicePage() {
                           color: "#ffffff",
                           fontSize: "14px",
                           outline: "none",
+                          boxSizing: "border-box",
                         }}
                       />
                     </div>
@@ -1286,7 +848,6 @@ export default function CreateInvoicePage() {
                 </div>
               ))}
 
-              {/* Totaux */}
               <div
                 style={{
                   padding: "20px",
@@ -1305,244 +866,21 @@ export default function CreateInvoicePage() {
                     margin: 0,
                   }}
                 >
-                  💰 Totaux
+                  💰 Total
                 </h3>
-
                 <div
                   style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-                    gap: "16px",
-                  }}
-                >
-                  <div>
-                    <label
-                      style={{
-                        display: "block",
-                        fontSize: "14px",
-                        fontWeight: "600",
-                        color: "#9ca3af",
-                        marginBottom: "8px",
-                      }}
-                    >
-                      Total HT
-                    </label>
-                    <div
-                      style={{
-                        fontSize: "18px",
-                        fontWeight: "600",
-                        color: "#10b981",
-                      }}
-                    >
-                      {formData.totalHT.toFixed(2)} €
-                    </div>
-                  </div>
-
-                  <div>
-                    <label
-                      style={{
-                        display: "block",
-                        fontSize: "14px",
-                        fontWeight: "600",
-                        color: "#9ca3af",
-                        marginBottom: "8px",
-                      }}
-                    >
-                      TVA ({formData.tvaRate}%)
-                    </label>
-                    <div
-                      style={{
-                        fontSize: "18px",
-                        fontWeight: "600",
-                        color: "#10b981",
-                      }}
-                    >
-                      {formData.tvaAmount.toFixed(2)} €
-                    </div>
-                  </div>
-
-                  <div>
-                    <label
-                      style={{
-                        display: "block",
-                        fontSize: "14px",
-                        fontWeight: "600",
-                        color: "#9ca3af",
-                        marginBottom: "8px",
-                      }}
-                    >
-                      Total TTC
-                    </label>
-                    <div
-                      style={{
-                        fontSize: "24px",
-                        fontWeight: "bold",
-                        color: "#ffffff",
-                      }}
-                    >
-                      {formData.totalTTC.toFixed(2)} €
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </Card>
-
-            {/* 5. Conditions */}
-            <Card>
-              <h2
-                style={{
-                  fontSize: "20px",
-                  fontWeight: "600",
-                  color: "#ffffff",
-                  marginBottom: "20px",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
-                }}
-              >
-                📋 5. Conditions de Paiement
-              </h2>
-
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))",
-                  gap: "20px",
-                  marginBottom: "20px",
-                }}
-              >
-                <div>
-                  <label
-                    style={{
-                      display: "block",
-                      fontSize: "14px",
-                      fontWeight: "600",
-                      color: "#9ca3af",
-                      marginBottom: "8px",
-                    }}
-                  >
-                    Modalité de paiement *
-                  </label>
-                  <select
-                    value={formData.paymentMethod}
-                    onChange={(e) =>
-                      handleInputChange("paymentMethod", e.target.value)
-                    }
-                    style={{
-                      width: "100%",
-                      padding: "12px 16px",
-                      background: "rgba(255, 255, 255, 0.05)",
-                      border: "1px solid rgba(255, 255, 255, 0.2)",
-                      borderRadius: "8px",
-                      color: "#ffffff",
-                      fontSize: "14px",
-                      outline: "none",
-                    }}
-                  >
-                    <option value="virement" style={{ background: "#1a1a2e" }}>
-                      Virement bancaire
-                    </option>
-                    <option value="cheque" style={{ background: "#1a1a2e" }}>
-                      Chèque
-                    </option>
-                    <option value="especes" style={{ background: "#1a1a2e" }}>
-                      Espèces
-                    </option>
-                    <option value="carte" style={{ background: "#1a1a2e" }}>
-                      Carte bancaire
-                    </option>
-                    <option value="paypal" style={{ background: "#1a1a2e" }}>
-                      PayPal
-                    </option>
-                  </select>
-                </div>
-
-                <div>
-                  <label
-                    style={{
-                      display: "block",
-                      fontSize: "14px",
-                      fontWeight: "600",
-                      color: "#9ca3af",
-                      marginBottom: "8px",
-                    }}
-                  >
-                    Délai de paiement *
-                  </label>
-                  <select
-                    value={formData.paymentDelay}
-                    onChange={(e) =>
-                      handleInputChange("paymentDelay", e.target.value)
-                    }
-                    style={{
-                      width: "100%",
-                      padding: "12px 16px",
-                      background: "rgba(255, 255, 255, 0.05)",
-                      border: "1px solid rgba(255, 255, 255, 0.2)",
-                      borderRadius: "8px",
-                      color: "#ffffff",
-                      fontSize: "14px",
-                      outline: "none",
-                    }}
-                  >
-                    <option value="reception" style={{ background: "#1a1a2e" }}>
-                      Paiement à réception
-                    </option>
-                    <option value="30j" style={{ background: "#1a1a2e" }}>
-                      30 jours
-                    </option>
-                    <option
-                      value="30j_fin_mois"
-                      style={{ background: "#1a1a2e" }}
-                    >
-                      30 jours fin de mois
-                    </option>
-                    <option value="45j" style={{ background: "#1a1a2e" }}>
-                      45 jours
-                    </option>
-                    <option value="60j" style={{ background: "#1a1a2e" }}>
-                      60 jours
-                    </option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label
-                  style={{
-                    display: "block",
-                    fontSize: "14px",
-                    fontWeight: "600",
-                    color: "#9ca3af",
-                    marginBottom: "8px",
-                  }}
-                >
-                  Clause de pénalités de retard (obligatoire) *
-                </label>
-                <textarea
-                  required
-                  value={formData.penaltyClause}
-                  onChange={(e) =>
-                    handleInputChange("penaltyClause", e.target.value)
-                  }
-                  rows={3}
-                  style={{
-                    width: "100%",
-                    padding: "12px 16px",
-                    background: "rgba(255, 255, 255, 0.05)",
-                    border: "1px solid rgba(255, 255, 255, 0.2)",
-                    borderRadius: "8px",
+                    fontSize: "24px",
+                    fontWeight: "bold",
                     color: "#ffffff",
-                    fontSize: "14px",
-                    outline: "none",
-                    resize: "vertical",
-                    fontFamily: "inherit",
                   }}
-                />
+                >
+                  {formData.totalTTC.toFixed(2)} €
+                </div>
               </div>
-            </Card>
+            </div>
 
-            {/* Boutons d'action */}
+            {/* Boutons */}
             <div
               style={{
                 display: "flex",
@@ -1562,7 +900,6 @@ export default function CreateInvoicePage() {
                   borderRadius: "8px",
                   fontSize: "16px",
                   cursor: "pointer",
-                  transition: "all 0.2s ease",
                 }}
               >
                 Annuler
@@ -1579,18 +916,65 @@ export default function CreateInvoicePage() {
                   fontSize: "16px",
                   fontWeight: "600",
                   cursor: "pointer",
-                  transition: "all 0.2s ease",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "8px",
                 }}
               >
-                📄 {isEditing ? "Mettre à jour la Facture" : "Créer la Facture"}
+                📄 {isEditing ? "Mettre à jour" : "Créer la Facture"}
               </button>
             </div>
           </div>
         </form>
       </main>
     </div>
+  );
+}
+
+// Composant de chargement
+function LoadingFallback() {
+  return (
+    <div
+      style={{
+        minHeight: "100vh",
+        background:
+          "linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #16213e 100%)",
+        color: "#ffffff",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <div style={{ textAlign: "center" }}>
+        <div
+          style={{
+            display: "inline-block",
+            width: "40px",
+            height: "40px",
+            border: "4px solid rgba(139, 92, 246, 0.3)",
+            borderTop: "4px solid #8b5cf6",
+            borderRadius: "50%",
+            animation: "spin 1s linear infinite",
+          }}
+        ></div>
+        <p style={{ marginTop: "16px", color: "#d1d5db" }}>Chargement...</p>
+      </div>
+      <style jsx>{`
+        @keyframes spin {
+          0% {
+            transform: rotate(0deg);
+          }
+          100% {
+            transform: rotate(360deg);
+          }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+// Composant principal avec Suspense
+export default function CreateInvoicePage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <CreateInvoiceContent />
+    </Suspense>
   );
 }
