@@ -38,30 +38,6 @@ class AuthService {
   // Connexion utilisateur
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     try {
-      // Vérification des identifiants admin (compte par défaut)
-      if (
-        credentials.email === "admin@facturly.com" &&
-        credentials.password === "Admin123!"
-      ) {
-        const user: User = {
-          id: "admin-user-id",
-          email: "admin@facturly.com",
-          name: "Administrateur Facturly",
-          role: "ADMIN",
-        };
-
-        const token = "admin-jwt-token-" + Date.now();
-
-        // Sauvegarder la session
-        this.saveSession(user, token, credentials.rememberMe);
-
-        return {
-          success: true,
-          user,
-          token,
-        };
-      }
-
       // Appel à l'API backend pour la connexion
       const response = await apiService.login({
         email: credentials.email,

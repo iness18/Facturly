@@ -4564,11 +4564,16 @@ export default function AdminPage() {
                 </div>
                 <button
                   onClick={() => {
-                    // Supprimer le token d'authentification
+                    // Supprimer tous les tokens d'authentification
                     localStorage.removeItem("token");
                     sessionStorage.removeItem("token");
-                    // Rediriger vers la page de connexion
-                    window.location.href = "/login";
+                    localStorage.removeItem("facturly_token");
+                    localStorage.removeItem("facturly_user");
+                    localStorage.removeItem("facturly_remember");
+                    sessionStorage.removeItem("facturly_token");
+                    sessionStorage.removeItem("facturly_user");
+                    // Rediriger vers la page hero
+                    window.location.href = "/";
                   }}
                   style={{
                     background: "rgba(239, 68, 68, 0.2)",
