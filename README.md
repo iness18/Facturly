@@ -36,6 +36,7 @@ docker-compose up -d
 ### URLs d'accès
 
 - **Frontend**: http://localhost:3000
+- **Panneau d'administration**: http://localhost:3000/admin
 - **Backend API**: http://localhost:3001
 - **Base de données**: localhost:5432
 
@@ -45,17 +46,30 @@ docker-compose up -d
 facturly/
 ├── backend/                 # API NestJS
 │   ├── src/
+│   │   ├── admin/          # Module administration
+│   │   │   ├── admin.controller.ts        # Contrôleur principal
+│   │   │   ├── admin-simple.controller.ts # API simplifiée
+│   │   │   ├── admin-dashboard.service.ts # Statistiques
+│   │   │   ├── admin-users.service.ts     # Gestion utilisateurs
+│   │   │   └── admin-packs.service.ts     # Gestion packs
+│   │   ├── auth/           # Authentification JWT
+│   │   │   ├── auth.service.ts    # Service d'authentification
+│   │   │   ├── jwt-auth.guard.ts  # Protection des routes
+│   │   │   └── roles.guard.ts     # Gestion des rôles
 │   │   ├── database/       # Service Prisma
 │   │   ├── invoices/       # Module factures
 │   │   └── main.ts         # Point d'entrée
-│   └── prisma/             # Schéma et migrations
+│   └── prisma/             # Schéma et migrations étendus
 ├── frontend/               # Interface Next.js
 │   ├── src/
 │   │   ├── app/           # Pages (App Router)
+│   │   │   ├── admin/     # Panneau d'administration
+│   │   │   │   └── page.tsx # Interface admin complète (9 sections)
 │   │   │   ├── page.tsx   # Page d'accueil avec Hero + Fonctionnalités
 │   │   │   ├── page.module.css # Styles CSS Modules
 │   │   │   └── globals.css # Système de design
 │   │   └── components/    # Composants réutilisables
+│   │       ├── ProtectedRoute.tsx # Protection des routes
 │   │       └── ui/        # Composants UI (Button, etc.)
 ├── memory-bank/           # Documentation du projet
 └── docker-compose.yml     # Configuration Docker
@@ -77,6 +91,84 @@ facturly/
 3. **⏰ Suivi en temps réel** - Statuts et notifications automatiques
 4. **📊 Tableau de bord** - Statistiques et analyses détaillées
 5. **🛡️ Sécurité avancée** - Authentification et protection des données
+
+## 🎛️ Panneau d'Administration
+
+### Interface d'administration complète
+
+Le panneau d'administration offre une gestion complète de la plateforme avec 9 sections principales :
+
+#### 🎛️ Tableau de bord
+
+- **Statistiques en temps réel** : Chiffre d'affaires, factures générées, utilisateurs actifs
+- **Métriques détaillées** : Analyses quotidiennes, hebdomadaires et mensuelles
+- **Alertes système** : Monitoring des erreurs et problèmes techniques
+- **Derniers inscrits** : Suivi des nouveaux utilisateurs
+
+#### 👥 Gestion des utilisateurs
+
+- **Liste complète** : Tous les utilisateurs avec informations détaillées
+- **Recherche avancée** : Filtrage par nom, email, statut
+- **Actions administratives** : Bannissement, réinitialisation de mot de passe
+- **Statistiques utilisateur** : Nombre de factures et clients par utilisateur
+- **Gestion des abonnements** : Suivi des plans souscrits
+
+#### 💼 Gestion des offres/packs
+
+- **CRUD complet** : Création, modification, suppression des packs
+- **Modal de modification** : Interface intuitive pour éditer les packs
+- **Activation/désactivation** : Contrôle du statut des offres en temps réel
+- **Configuration avancée** : Prix, durée, fonctionnalités, limites personnalisables
+- **Suivi des abonnements** : Nombre d'abonnés par pack
+
+#### 🧾 Suivi des paiements
+
+- **Intégration Stripe** : Monitoring complet des transactions
+- **Statuts détaillés** : Complété, échoué, en attente, remboursé
+- **Gestion des remboursements** : Actions directes sur les paiements
+- **Historique complet** : Suivi chronologique des transactions
+
+#### 💌 Outils marketing
+
+- **Campagnes email** : Création et envoi de newsletters
+- **Codes promo** : Gestion des réductions et promotions
+- **Statistiques marketing** : Taux d'ouverture, clics, conversions
+- **Segmentation** : Ciblage des utilisateurs par critères
+
+#### 📝 Gestion du contenu
+
+- **Branding** : Personnalisation du logo, couleurs, slogan
+- **Pages statiques** : Édition de la page À propos, FAQ, CGU
+- **Politique de confidentialité** : Gestion des mentions légales
+- **Prévisualisation** : Aperçu des modifications avant publication
+
+#### 🐛 Gestion des tickets
+
+- **Support client** : Suivi des demandes d'assistance
+- **Priorisation** : Classification par urgence (urgent, élevée, moyenne, faible)
+- **Statuts avancés** : Ouvert, en cours, résolu, fermé
+- **Assignment** : Attribution des tickets aux équipes
+
+#### 🛠️ Paramètres avancés
+
+- **Configuration système** : Mode maintenance, inscriptions, limites
+- **Clés API** : Gestion Stripe, PDF, services externes
+- **Sauvegarde** : Outils de backup et maintenance
+- **Sécurité** : Paramètres JWT, authentification
+
+#### 🔒 Gestion des rôles
+
+- **Hiérarchie admin** : Super Admin, Modérateur, Support, Analyste
+- **Permissions granulaires** : Contrôle d'accès par fonctionnalité
+- **Audit trail** : Suivi des actions administratives
+
+### Fonctionnalités techniques
+
+- **Interface responsive** : Optimisée pour desktop et mobile
+- **Temps réel** : Mise à jour automatique des données
+- **API intégrée** : Connexion directe avec le backend NestJS
+- **Gestion d'erreurs** : Messages utilisateur et logging complet
+- **Sécurité** : Protection des routes et validation des permissions
 
 ## 🛠️ Développement
 
@@ -102,9 +194,34 @@ docker-compose exec db psql -U facturly_user -d facturly_db
 # Migrations manuelles (si nécessaire)
 docker-compose exec backend npx prisma migrate deploy
 docker-compose exec backend npx prisma generate
+
+# Résoudre les problèmes de cache Docker (si interface admin ne se met pas à jour)
+docker-compose down
+docker-compose build --no-cache
+docker-compose up -d
+```
+
+### Accès au panneau d'administration
+
+```bash
+# L'interface admin est accessible directement
+http://localhost:3000/admin
+
+# Sections disponibles :
+# - 🎛️ Tableau de bord : /admin (onglet dashboard)
+# - 👥 Utilisateurs : /admin (onglet users)
+# - 💼 Packs : /admin (onglet packs)
+# - 🧾 Paiements : /admin (onglet payments)
+# - 💌 Marketing : /admin (onglet marketing)
+# - 📝 Contenu : /admin (onglet content)
+# - 🐛 Tickets : /admin (onglet tickets)
+# - 🛠️ Paramètres : /admin (onglet settings)
+# - 🔒 Rôles : /admin (onglet roles)
 ```
 
 ### API Endpoints
+
+#### Factures
 
 - `GET /invoices` - Liste des factures
 - `POST /invoices` - Créer une facture
@@ -112,6 +229,16 @@ docker-compose exec backend npx prisma generate
 - `PATCH /invoices/:id` - Modifier une facture
 - `DELETE /invoices/:id` - Supprimer une facture
 - `GET /invoices/stats` - Statistiques
+
+#### Administration
+
+- `GET /admin/dashboard` - Statistiques du tableau de bord admin
+- `GET /admin/users` - Liste des utilisateurs avec statistiques
+- `GET /admin/packs` - Liste des packs/offres
+- `POST /admin/packs` - Créer un nouveau pack
+- `PUT /admin/packs/:id` - Modifier un pack
+- `DELETE /admin/packs/:id` - Supprimer un pack
+- `PUT /admin/packs/:id/toggle` - Activer/désactiver un pack
 
 ### Exemple de création de facture
 
@@ -154,21 +281,49 @@ curl -X POST http://localhost:3001/invoices \
 
 ### ✅ Implémentées
 
+#### Interface utilisateur
+
 - **Interface moderne** : Page d'accueil avec Hero et section Fonctionnalités
 - **CSS Modules** : Système de styling moderne et performant
-- **API CRUD complète** : Gestion des factures avec validation
-- **Base de données** : PostgreSQL avec schéma Prisma
-- **Migrations automatiques** : Déploiement automatique au démarrage
 - **Design responsive** : Interface adaptée à tous les écrans
 - **Composants réutilisables** : Système de design cohérent
 
+#### Backend et API
+
+- **API CRUD complète** : Gestion des factures avec validation
+- **Base de données** : PostgreSQL avec schéma Prisma étendu
+- **Migrations automatiques** : Déploiement automatique au démarrage
+- **Architecture modulaire** : Services séparés par domaine
+
+#### Panneau d'administration complet
+
+- **🎛️ Tableau de bord** : Statistiques temps réel, métriques détaillées
+- **👥 Gestion utilisateurs** : CRUD complet, recherche, bannissement
+- **💼 Gestion des packs** : Création, modification, suppression avec modal
+- **🧾 Suivi paiements** : Intégration Stripe, gestion remboursements
+- **💌 Outils marketing** : Campagnes email, codes promo
+- **📝 Gestion contenu** : Branding, pages statiques, CGU
+- **🐛 Support tickets** : Système de tickets avec priorisation
+- **🛠️ Paramètres avancés** : Configuration système, clés API
+- **🔒 Gestion des rôles** : Hiérarchie admin, permissions granulaires
+
+#### Modèles de données étendus
+
+- **User** : Utilisateurs avec rôles et abonnements
+- **Pack** : Offres avec fonctionnalités et limites
+- **Payment** : Transactions Stripe complètes
+- **Ticket** : Système de support client
+- **EmailCampaign** : Campagnes marketing
+- **PromoCode** : Codes de réduction
+- **SiteContent** : Contenu personnalisable
+
 ### 🚧 En développement
 
-- Authentification JWT
-- Gestion des clients
-- Génération PDF
-- Envoi d'emails
+- Synchronisation packs avec interface utilisateur
+- Génération PDF avancée
+- Envoi d'emails automatisés
 - Templates personnalisables
+- Notifications push
 
 ### 📋 Roadmap
 
@@ -205,11 +360,38 @@ PORT=3001
 
 ### Base de données
 
-Le schéma Prisma définit actuellement :
+Le schéma Prisma étendu définit :
 
+#### Modèles principaux
+
+- **User** - Utilisateurs avec authentification, rôles et profils complets
 - **Invoice** - Factures avec numéro unique, client, montant et timestamps
+- **Client** - Répertoire des clients avec informations complètes
+- **Pack** - Offres/abonnements avec fonctionnalités et limites
+- **Payment** - Transactions Stripe avec statuts et métadonnées
+
+#### Modèles administratifs
+
+- **Ticket** - Système de support avec priorisation et assignment
+- **EmailCampaign** - Campagnes marketing avec statistiques
+- **PromoCode** - Codes de réduction avec limites d'utilisation
+- **SiteContent** - Contenu personnalisable du site
+- **SystemSettings** - Configuration globale de l'application
+
+#### Relations complexes
+
+- **User ↔ Invoice** : Un utilisateur peut avoir plusieurs factures
+- **User ↔ Client** : Gestion du répertoire client par utilisateur
+- **User ↔ Pack** : Abonnements et souscriptions
+- **Payment ↔ User** : Historique des transactions
+- **Ticket ↔ User** : Support client personnalisé
+
+#### Fonctionnalités avancées
+
 - **Migrations automatiques** - Appliquées au démarrage du backend
-- **Relations futures** : User, Client, InvoiceItem
+- **Indexes optimisés** - Performance des requêtes complexes
+- **Contraintes de données** - Intégrité référentielle
+- **Soft delete** - Suppression logique pour l'audit
 
 ## 🎨 Système de design
 
@@ -271,6 +453,19 @@ La documentation complète du projet est disponible dans le dossier `memory-bank
 
 ## 🚀 Améliorations récentes
 
+### v3.0 - Panneau d'Administration Complet
+
+- ✅ **Panneau d'administration** : Interface complète avec 9 sections fonctionnelles
+- ✅ **Gestion des packs avancée** : CRUD complet avec modal de modification
+- ✅ **Tableau de bord admin** : Statistiques temps réel et métriques détaillées
+- ✅ **Gestion utilisateurs** : Recherche, bannissement, réinitialisation
+- ✅ **Suivi des paiements** : Intégration Stripe avec gestion des remboursements
+- ✅ **Outils marketing** : Campagnes email et codes promo
+- ✅ **Support client** : Système de tickets avec priorisation
+- ✅ **Configuration système** : Paramètres avancés et clés API
+- ✅ **Schéma Prisma étendu** : 10+ modèles avec relations complexes
+- ✅ **API backend complète** : Endpoints pour toutes les fonctionnalités admin
+
 ### v2.0 - Refonte CSS et UX
 
 - ✅ **Remplacement de Tailwind** par CSS Modules pour plus de stabilité
@@ -279,6 +474,22 @@ La documentation complète du projet est disponible dans le dossier `memory-bank
 - ✅ **Design system** moderne avec variables CSS
 - ✅ **Composants réutilisables** (Button, etc.)
 - ✅ **Interface responsive** optimisée
+
+### Fonctionnalités clés ajoutées
+
+#### Gestion des packs améliorée
+
+- **Modal de modification** : Interface intuitive similaire à l'édition des factures
+- **Bouton de suppression** : Suppression sécurisée avec confirmation
+- **Activation/désactivation** : Contrôle du statut en temps réel
+- **Configuration complète** : Prix, durée, fonctionnalités, limites personnalisables
+
+#### Architecture backend robuste
+
+- **Services modulaires** : Séparation claire des responsabilités
+- **Contrôleurs spécialisés** : Admin simple et complet
+- **Validation des données** : Sécurité et intégrité des informations
+- **Gestion d'erreurs** : Messages utilisateur et logging détaillé
 
 ## 🤝 Contribution
 

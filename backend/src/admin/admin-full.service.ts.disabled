@@ -1,0 +1,1231 @@
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
+import { PrismaClient } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
+
+@Injectable()
+export class AdminFullService {
+  private prisma = new PrismaClient();
+
+  constructor() {
+    this.prisma.$connect();
+  }
+
+  // 🎛️ Dashboard - Statistiques générales
+  async getDashboardStats() {
+    const [
+      totalUsers,
+      totalInvoices,
+      totalRevenue,
+      activeUsers,
+      recentUsers,
+      systemAlerts,
+      totalClients,
+    ] = await Promise.all([
+      this.prisma.user.count(),
+      this.prisma.invoice.count(),
+      this.prisma.payment.aggregate({
+        where: { status: 'COMPLETED' },
+        _sum: { amount: true },
+      }),
+      this.prisma.user.count({ where: { isActive: true } }),
+      this.prisma.user.count({
+        where: {
+          createdAt: {
+            gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30 jours
+          },
+        },
+      }),
+      this.prisma.systemLog.count({
+        where: {
+          level: { in: ['ERROR', 'FATAL'] },
+          createdAt: {
+            gte: new Date(Date.now() - 24 * 60 * 60 * 1000), // 24h
+          },
+        },
+      }),
+      this.prisma.client.count(),
+    ]);
+
+    // Statistiques par période
+    const today = new Date();
+    const startOfDay = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate(),
+    );
+    const startOfWeek = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+
+    const [dailyInvoices, weeklyInvoices, monthlyInvoices] = await Promise.all([
+      this.prisma.invoice.count({ where: { createdAt: { gte: startOfDay } } }),
+      this.prisma.invoice.count({ where: { createdAt: { gte: startOfWeek } } }),
+      this.prisma.invoice.count({
+        where: { createdAt: { gte: startOfMonth } },
+      }),
+    ]);
+
+    return {
+      users: {
+        total: totalUsers,
+        active: activeUsers,
+        inactive: totalUsers - activeUsers,
+        recent: recentUsers,
+      },
+      invoices: {
+        total: totalInvoices,
+        daily: dailyInvoices,
+        weekly: weeklyInvoices,
+        monthly: monthlyInvoices,
+      },
+      revenue: {
+        total: totalRevenue._sum.amount || 0,
+      },
+      clients: {
+        total: totalClients,
+      },
+      alerts: {
+        count: systemAlerts,
+      },
+    };
+  }
+
+  // 👥 Gestion des utilisateurs
+  async getUsers(search?: string, page: number = 1) {
+    const limit = 20;
+    const offset = (page - 1) * limit;
+
+    const where = search
+      ? {
+          OR: [
+            { name: { contains: search, mode: 'insensitive' as const } },
+            { email: { contains: search, mode: 'insensitive' as const } },
+            { company: { contains: search, mode: 'insensitive' as const } },
+          ],
+        }
+      : {};
+
+    const [users, total] = await Promise.all([
+      this.prisma.user.findMany({
+        where,
+        include: {
+          _count: {
+            select: {
+              invoices: true,
+              clients: true,
+            },
+          },
+          subscriptions: {
+            where: { status: 'ACTIVE' },
+            include: { pack: true },
+            take: 1,
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip: offset,
+        take: limit,
+      }),
+      this.prisma.user.count({ where }),
+    ]);
+
+    return {
+      users: users.map((user) => ({
+        ...user,
+        subscription: user.subscriptions[0] || null,
+      })),
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async getUserDetails(id: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      include: {
+        _count: {
+          select: {
+            invoices: true,
+            clients: true,
+            payments: true,
+            tickets: true,
+          },
+        },
+        subscriptions: {
+          include: { pack: true },
+          orderBy: { createdAt: 'desc' },
+        },
+        payments: {
+          orderBy: { createdAt: 'desc' },
+          take: 10,
+        },
+        tickets: {
+          orderBy: { createdAt: 'desc' },
+          take: 5,
+        },
+      },
+    });
+
+    if (!user) {
+      throw new NotFoundException('Utilisateur non trouvé');
+    }
+
+    return user;
+  }
+
+  async banUser(id: string, banned: boolean) {
+    const user = await this.prisma.user.findUnique({ where: { id } });
+    if (!user) {
+      throw new NotFoundException('Utilisateur non trouvé');
+    }
+
+    if (user.role === 'ADMIN') {
+      throw new BadRequestException('Impossible de bannir un administrateur');
+    }
+
+    const updatedUser = await this.prisma.user.update({
+      where: { id },
+      data: {
+        isBanned: banned,
+        isActive: banned ? false : true,
+      },
+    });
+
+    // Log de l'action
+    await this.prisma.systemLog.create({
+      data: {
+        level: 'INFO',
+        category: 'USER_MANAGEMENT',
+        message: `Utilisateur ${banned ? 'banni' : 'débanni'}: ${user.email}`,
+        details: { userId: id, action: banned ? 'ban' : 'unban' },
+      },
+    });
+
+    return updatedUser;
+  }
+
+  async resetUserPassword(id: string) {
+    const user = await this.prisma.user.findUnique({ where: { id } });
+    if (!user) {
+      throw new NotFoundException('Utilisateur non trouvé');
+    }
+
+    // Générer un mot de passe temporaire
+    const tempPassword = Math.random().toString(36).slice(-8);
+    const hashedPassword = await bcrypt.hash(tempPassword, 10);
+
+    await this.prisma.user.update({
+      where: { id },
+      data: { password: hashedPassword },
+    });
+
+    // Log de l'action
+    await this.prisma.systemLog.create({
+      data: {
+        level: 'INFO',
+        category: 'USER_MANAGEMENT',
+        message: `Mot de passe réinitialisé pour: ${user.email}`,
+        details: { userId: id },
+      },
+    });
+
+    return {
+      message: 'Mot de passe réinitialisé',
+      tempPassword, // En production, ne pas retourner le mot de passe
+    };
+  }
+
+  // 💼 Gestion des packs/offres
+  async getPacks() {
+    const packs = await this.prisma.pack.findMany({
+      include: {
+        _count: {
+          select: {
+            subscriptions: {
+              where: { status: 'ACTIVE' },
+            },
+          },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return {
+      packs: packs.map((pack) => ({
+        ...pack,
+        subscribersCount: pack._count.subscriptions,
+      })),
+    };
+  }
+
+  async createPack(packData: any, adminId: string) {
+    const pack = await this.prisma.pack.create({
+      data: {
+        name: packData.name,
+        description: packData.description,
+        price: packData.price,
+        duration: packData.duration,
+        features: packData.features,
+        limits: packData.limits,
+        isActive: packData.isActive ?? true,
+      },
+    });
+
+    // Log de l'action
+    await this.prisma.systemLog.create({
+      data: {
+        level: 'INFO',
+        category: 'PACK_MANAGEMENT',
+        message: `Nouveau pack créé: ${pack.name}`,
+        details: { packId: pack.id, adminId },
+        userId: adminId,
+      },
+    });
+
+    return pack;
+  }
+
+  async updatePack(id: string, packData: any) {
+    const pack = await this.prisma.pack.update({
+      where: { id },
+      data: {
+        name: packData.name,
+        description: packData.description,
+        price: packData.price,
+        duration: packData.duration,
+        features: packData.features,
+        limits: packData.limits,
+        isActive: packData.isActive,
+      },
+    });
+
+    return pack;
+  }
+
+  async deletePack(id: string) {
+    // Vérifier qu'il n'y a pas d'abonnements actifs
+    const activeSubscriptions = await this.prisma.subscription.count({
+      where: { packId: id, status: 'ACTIVE' },
+    });
+
+    if (activeSubscriptions > 0) {
+      throw new BadRequestException(
+        'Impossible de supprimer un pack avec des abonnements actifs',
+      );
+    }
+
+    await this.prisma.pack.delete({ where: { id } });
+    return { message: 'Pack supprimé avec succès' };
+  }
+
+  async togglePackStatus(id: string) {
+    const pack = await this.prisma.pack.findUnique({ where: { id } });
+    if (!pack) {
+      throw new NotFoundException('Pack non trouvé');
+    }
+
+    const updatedPack = await this.prisma.pack.update({
+      where: { id },
+      data: { isActive: !pack.isActive },
+    });
+
+    return updatedPack;
+  }
+
+  // 🧾 Gestion des paiements
+  async getPayments(status?: string, page: number = 1) {
+    const limit = 20;
+    const offset = (page - 1) * limit;
+
+    const where = status ? { status: status.toUpperCase() as any } : {};
+
+    const [payments, total] = await Promise.all([
+      this.prisma.payment.findMany({
+        where,
+        include: {
+          user: {
+            select: { id: true, name: true, email: true },
+          },
+          subscription: {
+            include: { pack: true },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip: offset,
+        take: limit,
+      }),
+      this.prisma.payment.count({ where }),
+    ]);
+
+    return {
+      payments: payments.map((payment) => ({
+        ...payment,
+        userName: payment.user.name,
+        userEmail: payment.user.email,
+        packName: payment.subscription?.pack?.name || 'N/A',
+      })),
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async getPaymentDetails(id: string) {
+    const payment = await this.prisma.payment.findUnique({
+      where: { id },
+      include: {
+        user: true,
+        subscription: {
+          include: { pack: true },
+        },
+      },
+    });
+
+    if (!payment) {
+      throw new NotFoundException('Paiement non trouvé');
+    }
+
+    return payment;
+  }
+
+  async refundPayment(id: string, reason?: string) {
+    const payment = await this.prisma.payment.findUnique({ where: { id } });
+    if (!payment) {
+      throw new NotFoundException('Paiement non trouvé');
+    }
+
+    if (payment.status !== 'COMPLETED') {
+      throw new BadRequestException(
+        'Seuls les paiements complétés peuvent être remboursés',
+      );
+    }
+
+    const updatedPayment = await this.prisma.payment.update({
+      where: { id },
+      data: {
+        status: 'REFUNDED',
+        failureReason: reason,
+      },
+    });
+
+    // Log de l'action
+    await this.prisma.systemLog.create({
+      data: {
+        level: 'INFO',
+        category: 'PAYMENT',
+        message: `Paiement remboursé: ${payment.stripePaymentId}`,
+        details: { paymentId: id, reason },
+      },
+    });
+
+    return updatedPayment;
+  }
+
+  // 💌 Campagnes email
+  async getEmailCampaigns() {
+    const campaigns = await this.prisma.emailCampaign.findMany({
+      include: {
+        admin: {
+          select: { id: true, name: true, email: true },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return {
+      campaigns: campaigns.map((campaign) => ({
+        ...campaign,
+        recipientsCount: campaign.sentCount,
+        openRate:
+          campaign.sentCount > 0
+            ? (campaign.openCount / campaign.sentCount) * 100
+            : 0,
+        clickRate:
+          campaign.sentCount > 0
+            ? (campaign.clickCount / campaign.sentCount) * 100
+            : 0,
+      })),
+    };
+  }
+
+  async createEmailCampaign(campaignData: any, adminId: string) {
+    const campaign = await this.prisma.emailCampaign.create({
+      data: {
+        name: campaignData.name,
+        subject: campaignData.subject,
+        content: campaignData.content,
+        targetUsers: campaignData.targetUsers,
+        scheduledAt: campaignData.scheduledAt
+          ? new Date(campaignData.scheduledAt)
+          : null,
+        createdBy: adminId,
+      },
+    });
+
+    return campaign;
+  }
+
+  async updateEmailCampaign(id: string, campaignData: any) {
+    const campaign = await this.prisma.emailCampaign.findUnique({
+      where: { id },
+    });
+    if (!campaign) {
+      throw new NotFoundException('Campagne non trouvée');
+    }
+
+    if (campaign.status === 'SENT') {
+      throw new BadRequestException(
+        'Impossible de modifier une campagne déjà envoyée',
+      );
+    }
+
+    const updatedCampaign = await this.prisma.emailCampaign.update({
+      where: { id },
+      data: {
+        name: campaignData.name,
+        subject: campaignData.subject,
+        content: campaignData.content,
+        targetUsers: campaignData.targetUsers,
+        scheduledAt: campaignData.scheduledAt
+          ? new Date(campaignData.scheduledAt)
+          : null,
+      },
+    });
+
+    return updatedCampaign;
+  }
+
+  async sendEmailCampaign(id: string) {
+    const campaign = await this.prisma.emailCampaign.findUnique({
+      where: { id },
+    });
+    if (!campaign) {
+      throw new NotFoundException('Campagne non trouvée');
+    }
+
+    if (campaign.status === 'SENT') {
+      throw new BadRequestException('Campagne déjà envoyée');
+    }
+
+    // TODO: Implémenter l'envoi réel d'emails
+    const targetUsersCount = 100; // Simulé
+
+    const updatedCampaign = await this.prisma.emailCampaign.update({
+      where: { id },
+      data: {
+        status: 'SENT',
+        sentAt: new Date(),
+        sentCount: targetUsersCount,
+      },
+    });
+
+    return updatedCampaign;
+  }
+
+  async deleteEmailCampaign(id: string) {
+    const campaign = await this.prisma.emailCampaign.findUnique({
+      where: { id },
+    });
+    if (!campaign) {
+      throw new NotFoundException('Campagne non trouvée');
+    }
+
+    if (campaign.status === 'SENT') {
+      throw new BadRequestException(
+        'Impossible de supprimer une campagne envoyée',
+      );
+    }
+
+    await this.prisma.emailCampaign.delete({ where: { id } });
+    return { message: 'Campagne supprimée avec succès' };
+  }
+
+  // 🎫 Codes promo
+  async getPromoCodes() {
+    const promoCodes = await this.prisma.promoCode.findMany({
+      include: {
+        _count: {
+          select: { usages: true },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return {
+      promoCodes: promoCodes.map((promo) => ({
+        ...promo,
+        currentUses: promo._count.usages,
+      })),
+    };
+  }
+
+  async createPromoCode(promoData: any) {
+    // Vérifier que le code n'existe pas déjà
+    const existingCode = await this.prisma.promoCode.findUnique({
+      where: { code: promoData.code },
+    });
+
+    if (existingCode) {
+      throw new BadRequestException('Ce code promo existe déjà');
+    }
+
+    const promoCode = await this.prisma.promoCode.create({
+      data: {
+        code: promoData.code.toUpperCase(),
+        description: promoData.description,
+        discount: promoData.discount,
+        type: promoData.type,
+        maxUses: promoData.maxUses,
+        validFrom: new Date(promoData.validFrom),
+        validUntil: promoData.validUntil
+          ? new Date(promoData.validUntil)
+          : null,
+        isActive: promoData.isActive ?? true,
+      },
+    });
+
+    return promoCode;
+  }
+
+  async updatePromoCode(id: string, promoData: any) {
+    const promoCode = await this.prisma.promoCode.update({
+      where: { id },
+      data: {
+        description: promoData.description,
+        discount: promoData.discount,
+        type: promoData.type,
+        maxUses: promoData.maxUses,
+        validFrom: new Date(promoData.validFrom),
+        validUntil: promoData.validUntil
+          ? new Date(promoData.validUntil)
+          : null,
+        isActive: promoData.isActive,
+      },
+    });
+
+    return promoCode;
+  }
+
+  async togglePromoCodeStatus(id: string) {
+    const promoCode = await this.prisma.promoCode.findUnique({ where: { id } });
+    if (!promoCode) {
+      throw new NotFoundException('Code promo non trouvé');
+    }
+
+    const updatedPromoCode = await this.prisma.promoCode.update({
+      where: { id },
+      data: { isActive: !promoCode.isActive },
+    });
+
+    return updatedPromoCode;
+  }
+
+  async deletePromoCode(id: string) {
+    // Vérifier qu'il n'y a pas d'utilisations
+    const usageCount = await this.prisma.promoUsage.count({
+      where: { promoCodeId: id },
+    });
+
+    if (usageCount > 0) {
+      throw new BadRequestException(
+        'Impossible de supprimer un code promo utilisé',
+      );
+    }
+
+    await this.prisma.promoCode.delete({ where: { id } });
+    return { message: 'Code promo supprimé avec succès' };
+  }
+
+  // 📝 Gestion du contenu du site
+  async getSiteContent() {
+    const settings = await this.prisma.siteSetting.findMany({
+      orderBy: { key: 'asc' },
+    });
+
+    const content = settings.reduce(
+      (acc, setting) => {
+        acc[setting.key] = setting.value;
+        return acc;
+      },
+      {} as Record<string, string>,
+    );
+
+    // Valeurs par défaut si pas encore définies
+    return {
+      slogan: content.slogan || 'Facturez en toute simplicité',
+      aboutPage:
+        content.aboutPage ||
+        'Facturly est la solution de facturation moderne...',
+      faq: content.faq || '## Questions fréquemment posées...',
+      termsOfService:
+        content.termsOfService || "## Conditions générales d'utilisation...",
+      privacyPolicy:
+        content.privacyPolicy || '## Politique de confidentialité...',
+      logo: content.logo || '/facturly-logo.svg',
+      favicon: content.favicon || '/favicon.ico',
+      primaryColor: content.primaryColor || '#a855f7',
+      secondaryColor: content.secondaryColor || '#ec4899',
+    };
+  }
+
+  async updateSiteContent(contentData: any, adminId: string) {
+    const updates: Promise<any>[] = [];
+
+    for (const [key, value] of Object.entries(contentData)) {
+      updates.push(
+        this.prisma.siteSetting.upsert({
+          where: { key },
+          update: {
+            value: value as string,
+            updatedBy: adminId,
+          },
+          create: {
+            key,
+            value: value as string,
+            category: 'content',
+            type: 'text',
+            updatedBy: adminId,
+          },
+        }),
+      );
+    }
+
+    await Promise.all(updates);
+
+    // Log de l'action
+    await this.prisma.systemLog.create({
+      data: {
+        level: 'INFO',
+        category: 'CONTENT_MANAGEMENT',
+        message: 'Contenu du site mis à jour',
+        details: { keys: Object.keys(contentData) },
+        userId: adminId,
+      },
+    });
+
+    return { message: 'Contenu mis à jour avec succès' };
+  }
+
+  // 🐛 Gestion des tickets
+  async getTickets(status?: string, priority?: string) {
+    const where: any = {};
+    if (status) where.status = status.toUpperCase();
+    if (priority) where.priority = priority.toUpperCase();
+
+    const tickets = await this.prisma.ticket.findMany({
+      where,
+      include: {
+        user: {
+          select: { id: true, name: true, email: true },
+        },
+        assignedAdmin: {
+          select: { id: true, name: true, email: true },
+        },
+        _count: {
+          select: { messages: true },
+        },
+      },
+      orderBy: [{ priority: 'desc' }, { createdAt: 'desc' }],
+    });
+
+    return {
+      tickets: tickets.map((ticket) => ({
+        ...ticket,
+        userName: ticket.user.name,
+        userEmail: ticket.user.email,
+        messagesCount: ticket._count.messages,
+      })),
+    };
+  }
+
+  async getTicketDetails(id: string) {
+    const ticket = await this.prisma.ticket.findUnique({
+      where: { id },
+      include: {
+        user: true,
+        assignedAdmin: {
+          select: { id: true, name: true, email: true },
+        },
+        messages: {
+          include: {
+            user: {
+              select: { id: true, name: true, email: true },
+            },
+          },
+          orderBy: { createdAt: 'asc' },
+        },
+      },
+    });
+
+    if (!ticket) {
+      throw new NotFoundException('Ticket non trouvé');
+    }
+
+    return ticket;
+  }
+
+  async updateTicketStatus(id: string, status: string) {
+    const ticket = await this.prisma.ticket.update({
+      where: { id },
+      data: {
+        status: status.toUpperCase() as any,
+        updatedAt: new Date(),
+      },
+    });
+
+    return ticket;
+  }
+
+  async assignTicket(id: string, adminId: string) {
+    const ticket = await this.prisma.ticket.update({
+      where: { id },
+      data: {
+        assignedTo: adminId,
+        status: 'IN_PROGRESS',
+        updatedAt: new Date(),
+      },
+    });
+
+    return ticket;
+  }
+
+  async addTicketMessage(ticketId: string, message: string, userId: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    const isAdmin = user?.role === 'ADMIN';
+
+    const ticketMessage = await this.prisma.ticketMessage.create({
+      data: {
+        ticketId,
+        userId,
+        message,
+        isAdmin,
+      },
+      include: {
+        user: {
+          select: { id: true, name: true, email: true },
+        },
+      },
+    });
+
+    // Mettre à jour le ticket
+    await this.prisma.ticket.update({
+      where: { id: ticketId },
+      data: { updatedAt: new Date() },
+    });
+
+    return ticketMessage;
+  }
+
+  // 🛠️ Paramètres système
+  async getSystemSettings() {
+    const settings = await this.prisma.siteSetting.findMany({
+      where: {
+        category: 'system',
+      },
+    });
+
+    const systemSettings = settings.reduce(
+      (acc, setting) => {
+        acc[setting.key] = setting.value;
+        return acc;
+      },
+      {} as Record<string, string>,
+    );
+
+    // Valeurs par défaut
+    return {
+      maintenanceMode: systemSettings.maintenanceMode === 'true',
+      allowRegistrations: systemSettings.allowRegistrations !== 'false',
+      maxUsersPerAccount: parseInt(systemSettings.maxUsersPerAccount) || 1000,
+      emailNotifications: systemSettings.emailNotifications !== 'false',
+      backupFrequency: systemSettings.backupFrequency || 'daily',
+      dataRetentionDays: parseInt(systemSettings.dataRetentionDays) || 365,
+      stripePublicKey: systemSettings.stripePublicKey || '',
+      stripeSecretKey: systemSettings.stripeSecretKey || '',
+      freeInvoicesPerMonth: parseInt(systemSettings.freeInvoicesPerMonth) || 10,
+      pdfApiKey: systemSettings.pdfApiKey || '',
+    };
+  }
+
+  async updateSystemSettings(settings: any, adminId: string) {
+    const updates: Promise<any>[] = [];
+
+    for (const [key, value] of Object.entries(settings)) {
+      updates.push(
+        this.prisma.siteSetting.upsert({
+          where: { key },
+          update: {
+            value: String(value),
+            updatedBy: adminId,
+            category: 'system',
+          },
+          create: {
+            key,
+            value: String(value),
+            category: 'system',
+            type: 'text',
+            updatedBy: adminId,
+          },
+        }),
+      );
+    }
+
+    await Promise.all(updates);
+
+    // Log de l'action
+    await this.prisma.systemLog.create({
+      data: {
+        level: 'INFO',
+        category: 'SYSTEM_SETTINGS',
+        message: 'Paramètres système mis à jour',
+        details: { keys: Object.keys(settings) },
+        userId: adminId,
+      },
+    });
+
+    return { message: 'Paramètres mis à jour avec succès' };
+  }
+
+  async createDatabaseBackup() {
+    // TODO: Implémenter la sauvegarde réelle de la base de données
+
+    await this.prisma.systemLog.create({
+      data: {
+        level: 'INFO',
+        category: 'BACKUP',
+        message: 'Sauvegarde de la base de données initiée',
+        details: { timestamp: new Date().toISOString() },
+      },
+    });
+
+    return {
+      message: 'Sauvegarde initiée avec succès',
+      backupId: `backup_${Date.now()}`,
+    };
+  }
+
+  async cleanupSystemLogs(olderThanDays: number) {
+    const cutoffDate = new Date(
+      Date.now() - olderThanDays * 24 * 60 * 60 * 1000,
+    );
+
+    const result = await this.prisma.systemLog.deleteMany({
+      where: {
+        createdAt: { lt: cutoffDate },
+        level: { notIn: ['ERROR', 'FATAL'] }, // Garder les erreurs importantes
+      },
+    });
+
+    await this.prisma.systemLog.create({
+      data: {
+        level: 'INFO',
+        category: 'MAINTENANCE',
+        message: `Nettoyage des logs: ${result.count} entrées supprimées`,
+        details: { olderThanDays, deletedCount: result.count },
+      },
+    });
+
+    return {
+      message: `${result.count} logs supprimés avec succès`,
+      deletedCount: result.count,
+    };
+  }
+
+  async getSystemReport() {
+    const [totalUsers, totalInvoices, totalRevenue, errorCount] =
+      await Promise.all([
+        this.prisma.user.count(),
+        this.prisma.invoice.count(),
+        this.prisma.payment.aggregate({
+          where: { status: 'COMPLETED' },
+          _sum: { amount: true },
+        }),
+        this.prisma.systemLog.count({
+          where: {
+            level: { in: ['ERROR', 'FATAL'] },
+            createdAt: {
+              gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 jours
+            },
+          },
+        }),
+      ]);
+
+    return {
+      system: {
+        status: 'operational',
+        uptime: process.uptime(),
+        memory: process.memoryUsage(),
+        diskUsage: { used: '2.5GB', total: '10GB', percentage: 25 },
+      },
+      database: {
+        totalUsers,
+        totalInvoices,
+        totalRevenue: totalRevenue._sum.amount || 0,
+        errorCount,
+      },
+      performance: {
+        responseTime: '150ms',
+        throughput: '1200 req/min',
+      },
+    };
+  }
+
+  // 🔒 Gestion des rôles admin
+  async getAdmins() {
+    const admins = await this.prisma.user.findMany({
+      where: { role: 'ADMIN' },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        createdAt: true,
+        isActive: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return { admins };
+  }
+
+  async createAdmin(adminData: any) {
+    // Vérifier que l'email n'existe pas
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email: adminData.email },
+    });
+
+    if (existingUser) {
+      throw new BadRequestException(
+        'Un utilisateur avec cet email existe déjà',
+      );
+    }
+
+    const hashedPassword = await bcrypt.hash(adminData.password, 10);
+
+    const admin = await this.prisma.user.create({
+      data: {
+        name: adminData.name,
+        email: adminData.email,
+        password: hashedPassword,
+        role: 'ADMIN',
+      },
+    });
+
+    return admin;
+  }
+
+  async updateAdminRole(id: string, role: string) {
+    const admin = await this.prisma.user.update({
+      where: { id },
+      data: { role: role as any },
+    });
+
+    return admin;
+  }
+
+  async removeAdmin(id: string) {
+    // Vérifier qu'il reste au moins un admin
+    const adminCount = await this.prisma.user.count({
+      where: { role: 'ADMIN' },
+    });
+
+    if (adminCount <= 1) {
+      throw new BadRequestException(
+        'Impossible de supprimer le dernier administrateur',
+      );
+    }
+
+    await this.prisma.user.delete({ where: { id } });
+    return { message: 'Administrateur supprimé avec succès' };
+  }
+
+  // 📊 Logs système
+  async getSystemLogs(level?: string, category?: string, page: number = 1) {
+    const limit = 50;
+    const offset = (page - 1) * limit;
+
+    const where: any = {};
+    if (level) where.level = level.toUpperCase();
+    if (category) where.category = category.toUpperCase();
+
+    const [logs, total] = await Promise.all([
+      this.prisma.systemLog.findMany({
+        where,
+        include: {
+          user: {
+            select: { id: true, name: true, email: true },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+        skip: offset,
+        take: limit,
+      }),
+      this.prisma.systemLog.count({ where }),
+    ]);
+
+    return {
+      logs,
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  // 📈 Statistiques avancées
+  async getRevenueAnalytics(period: string) {
+    const now = new Date();
+    let startDate: Date;
+
+    switch (period) {
+      case '7d':
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case '30d':
+        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        break;
+      case '90d':
+        startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+        break;
+      default:
+        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    }
+
+    const payments = await this.prisma.payment.findMany({
+      where: {
+        status: 'COMPLETED',
+        createdAt: { gte: startDate },
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    // Grouper par jour
+    const dailyRevenue = payments.reduce(
+      (acc, payment) => {
+        const date = payment.createdAt.toISOString().split('T')[0];
+        acc[date] = (acc[date] || 0) + payment.amount;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
+
+    return {
+      period,
+      totalRevenue: payments.reduce((sum, p) => sum + p.amount, 0),
+      paymentsCount: payments.length,
+      dailyRevenue: Object.entries(dailyRevenue).map(([date, amount]) => ({
+        date,
+        amount,
+      })),
+    };
+  }
+
+  async getUserAnalytics(period: string) {
+    const now = new Date();
+    let startDate: Date;
+
+    switch (period) {
+      case '7d':
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case '30d':
+        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        break;
+      case '90d':
+        startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+        break;
+      default:
+        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    }
+
+    const users = await this.prisma.user.findMany({
+      where: {
+        createdAt: { gte: startDate },
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    // Grouper par jour
+    const dailySignups = users.reduce(
+      (acc, user) => {
+        const date = user.createdAt.toISOString().split('T')[0];
+        acc[date] = (acc[date] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>,
+    );
+
+    return {
+      period,
+      totalSignups: users.length,
+      dailySignups: Object.entries(dailySignups).map(([date, count]) => ({
+        date,
+        count,
+      })),
+    };
+  }
+
+  async getInvoiceAnalytics(period: string) {
+    const now = new Date();
+    let startDate: Date;
+
+    switch (period) {
+      case '7d':
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case '30d':
+        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        break;
+      case '90d':
+        startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+        break;
+      default:
+        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    }
+
+    const invoices = await this.prisma.invoice.findMany({
+      where: {
+        createdAt: { gte: startDate },
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    // Grouper par jour et par statut
+    const dailyInvoices = invoices.reduce(
+      (acc, invoice) => {
+        const date = invoice.createdAt.toISOString().split('T')[0];
+        if (!acc[date]) acc[date] = { total: 0, paid: 0, pending: 0 };
+        acc[date].total++;
+        if (invoice.status === 'PAID') acc[date].paid++;
+        else acc[date].pending++;
+        return acc;
+      },
+      {} as Record<string, { total: number; paid: number; pending: number }>,
+    );
+
+    return {
+      period,
+      totalInvoices: invoices.length,
+      paidInvoices: invoices.filter((i) => i.status === 'PAID').length,
+      pendingInvoices: invoices.filter((i) => i.status !== 'PAID').length,
+      dailyInvoices: Object.entries(dailyInvoices).map(([date, stats]) => ({
+        date,
+        ...stats,
+      })),
+    };
+  }
+
+  async onModuleDestroy() {
+    await this.prisma.$disconnect();
+  }
+}

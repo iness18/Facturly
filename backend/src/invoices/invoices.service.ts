@@ -12,8 +12,11 @@ export class InvoicesService {
       const invoice = await this.prisma.invoice.create({
         data: {
           invoiceNumber: createInvoiceDto.invoiceNumber,
-          clientName: createInvoiceDto.clientName,
           amount: createInvoiceDto.amount,
+          totalAmount: createInvoiceDto.amount, // Pour l'instant, total = amount
+          dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 jours
+          userId: 'temp-user-id', // TODO: Récupérer depuis l'auth
+          clientId: 'temp-client-id', // TODO: Récupérer depuis le DTO
         },
       });
       return invoice;
@@ -51,7 +54,15 @@ export class InvoicesService {
     try {
       return await this.prisma.invoice.update({
         where: { id },
-        data: updateInvoiceDto,
+        data: {
+          ...(updateInvoiceDto.invoiceNumber && {
+            invoiceNumber: updateInvoiceDto.invoiceNumber,
+          }),
+          ...(updateInvoiceDto.amount && { amount: updateInvoiceDto.amount }),
+          ...(updateInvoiceDto.amount && {
+            totalAmount: updateInvoiceDto.amount,
+          }),
+        },
       });
     } catch (error) {
       if (error.code === 'P2002') {

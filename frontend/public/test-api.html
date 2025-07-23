@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test API Facturly</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        background: #1a1a2e;
+        color: white;
+      }
+      .test-section {
+        background: rgba(255, 255, 255, 0.1);
+        padding: 20px;
+        margin: 20px 0;
+        border-radius: 8px;
+      }
+      button {
+        background: #8b5cf6;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        margin: 5px;
+      }
+      button:hover {
+        background: #7c3aed;
+      }
+      .result {
+        background: #000;
+        padding: 10px;
+        border-radius: 5px;
+        margin: 10px 0;
+        white-space: pre-wrap;
+        font-family: monospace;
+      }
+      .success {
+        color: #22c55e;
+      }
+      .error {
+        color: #ef4444;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🧪 Test API Facturly Admin</h1>
+
+    <div class="test-section">
+      <h2>Test de Connexion Backend</h2>
+      <button onclick="testDashboard()">📊 Test Dashboard</button>
+      <button onclick="testUsers()">👥 Test Users</button>
+      <button onclick="testPacks()">💼 Test Packs</button>
+      <button onclick="testCreatePack()">➕ Test Création Pack</button>
+      <div id="results" class="result"></div>
+    </div>
+
+    <script>
+      const API_BASE = "http://localhost:3001";
+      const resultsDiv = document.getElementById("results");
+
+      function log(message, type = "info") {
+        const timestamp = new Date().toLocaleTimeString();
+        const className =
+          type === "error" ? "error" : type === "success" ? "success" : "";
+        resultsDiv.innerHTML += `<div class="${className}">[${timestamp}] ${message}</div>`;
+        resultsDiv.scrollTop = resultsDiv.scrollHeight;
+      }
+
+      function clearResults() {
+        resultsDiv.innerHTML = "";
+      }
+
+      async function testDashboard() {
+        clearResults();
+        log("🔄 Test du dashboard...");
+
+        try {
+          const response = await fetch(`${API_BASE}/admin/dashboard`);
+          log(`Status: ${response.status} ${response.statusText}`);
+
+          if (response.ok) {
+            const data = await response.json();
+            log("✅ Dashboard OK:", "success");
+            log(JSON.stringify(data, null, 2));
+          } else {
+            log(`❌ Erreur dashboard: ${response.status}`, "error");
+          }
+        } catch (error) {
+          log(`❌ Erreur de connexion: ${error.message}`, "error");
+        }
+      }
+
+      async function testUsers() {
+        clearResults();
+        log("🔄 Test des utilisateurs...");
+
+        try {
+          const response = await fetch(`${API_BASE}/admin/users`);
+          log(`Status: ${response.status} ${response.statusText}`);
+
+          if (response.ok) {
+            const data = await response.json();
+            log("✅ Users OK:", "success");
+            log(JSON.stringify(data, null, 2));
+          } else {
+            log(`❌ Erreur users: ${response.status}`, "error");
+          }
+        } catch (error) {
+          log(`❌ Erreur de connexion: ${error.message}`, "error");
+        }
+      }
+
+      async function testPacks() {
+        clearResults();
+        log("🔄 Test des packs...");
+
+        try {
+          const response = await fetch(`${API_BASE}/admin/packs`);
+          log(`Status: ${response.status} ${response.statusText}`);
+
+          if (response.ok) {
+            const data = await response.json();
+            log("✅ Packs OK:", "success");
+            log(JSON.stringify(data, null, 2));
+          } else {
+            log(`❌ Erreur packs: ${response.status}`, "error");
+          }
+        } catch (error) {
+          log(`❌ Erreur de connexion: ${error.message}`, "error");
+        }
+      }
+
+      async function testCreatePack() {
+        clearResults();
+        log("🔄 Test création de pack...");
+
+        const packData = {
+          name: "Pack Test Frontend",
+          description: "Pack créé depuis le frontend",
+          price: 25.99,
+          duration: 30,
+          features: ["Feature test 1", "Feature test 2"],
+          limits: {
+            invoices: 75,
+            clients: 150,
+            exports: 50,
+          },
+        };
+
+        try {
+          const response = await fetch(`${API_BASE}/admin/packs`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(packData),
+          });
+
+          log(`Status: ${response.status} ${response.statusText}`);
+
+          if (response.ok) {
+            const data = await response.json();
+            log("✅ Pack créé avec succès:", "success");
+            log(JSON.stringify(data, null, 2));
+          } else {
+            const errorData = await response.text();
+            log(`❌ Erreur création pack: ${response.status}`, "error");
+            log(errorData);
+          }
+        } catch (error) {
+          log(`❌ Erreur de connexion: ${error.message}`, "error");
+        }
+      }
+
+      // Test automatique au chargement
+      window.onload = function () {
+        log("🚀 Page de test chargée");
+        log(`API Base URL: ${API_BASE}`);
+      };
+    </script>
+  </body>
+</html>

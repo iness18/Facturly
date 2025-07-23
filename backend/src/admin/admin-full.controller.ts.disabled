@@ -1,0 +1,283 @@
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+  Request,
+} from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
+import { AdminFullService } from './admin-full.service';
+
+@Controller('admin')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('ADMIN')
+export class AdminFullController {
+  constructor(private readonly adminService: AdminFullService) {}
+
+  // 🎛️ Dashboard - Statistiques générales
+  @Get('dashboard')
+  async getDashboard() {
+    return this.adminService.getDashboardStats();
+  }
+
+  // 👥 Gestion des utilisateurs
+  @Get('users')
+  async getUsers(
+    @Query('search') search?: string,
+    @Query('page') page?: string,
+  ) {
+    return this.adminService.getUsers(search, page ? parseInt(page) : 1);
+  }
+
+  @Get('users/:id')
+  async getUserDetails(@Param('id') id: string) {
+    return this.adminService.getUserDetails(id);
+  }
+
+  @Put('users/:id/ban')
+  async banUser(@Param('id') id: string, @Body() body: { banned: boolean }) {
+    return this.adminService.banUser(id, body.banned);
+  }
+
+  @Post('users/:id/reset-password')
+  async resetUserPassword(@Param('id') id: string) {
+    return this.adminService.resetUserPassword(id);
+  }
+
+  // 💼 Gestion des packs/offres
+  @Get('packs')
+  async getPacks() {
+    return this.adminService.getPacks();
+  }
+
+  @Post('packs')
+  async createPack(@Body() packData: any, @Request() req: any) {
+    return this.adminService.createPack(packData, req.user.id);
+  }
+
+  @Put('packs/:id')
+  async updatePack(@Param('id') id: string, @Body() packData: any) {
+    return this.adminService.updatePack(id, packData);
+  }
+
+  @Delete('packs/:id')
+  async deletePack(@Param('id') id: string) {
+    return this.adminService.deletePack(id);
+  }
+
+  @Put('packs/:id/toggle')
+  async togglePack(@Param('id') id: string) {
+    return this.adminService.togglePackStatus(id);
+  }
+
+  // 🧾 Gestion des paiements
+  @Get('payments')
+  async getPayments(
+    @Query('status') status?: string,
+    @Query('page') page?: string,
+  ) {
+    return this.adminService.getPayments(status, page ? parseInt(page) : 1);
+  }
+
+  @Get('payments/:id')
+  async getPaymentDetails(@Param('id') id: string) {
+    return this.adminService.getPaymentDetails(id);
+  }
+
+  @Post('payments/:id/refund')
+  async refundPayment(
+    @Param('id') id: string,
+    @Body() body: { reason?: string },
+  ) {
+    return this.adminService.refundPayment(id, body.reason);
+  }
+
+  // 💌 Outils marketing - Campagnes email
+  @Get('campaigns')
+  async getCampaigns() {
+    return this.adminService.getEmailCampaigns();
+  }
+
+  @Post('campaigns')
+  async createCampaign(@Body() campaignData: any, @Request() req: any) {
+    return this.adminService.createEmailCampaign(campaignData, req.user.id);
+  }
+
+  @Put('campaigns/:id')
+  async updateCampaign(@Param('id') id: string, @Body() campaignData: any) {
+    return this.adminService.updateEmailCampaign(id, campaignData);
+  }
+
+  @Post('campaigns/:id/send')
+  async sendCampaign(@Param('id') id: string) {
+    return this.adminService.sendEmailCampaign(id);
+  }
+
+  @Delete('campaigns/:id')
+  async deleteCampaign(@Param('id') id: string) {
+    return this.adminService.deleteEmailCampaign(id);
+  }
+
+  // 💌 Outils marketing - Codes promo
+  @Get('promo-codes')
+  async getPromoCodes() {
+    return this.adminService.getPromoCodes();
+  }
+
+  @Post('promo-codes')
+  async createPromoCode(@Body() promoData: any) {
+    return this.adminService.createPromoCode(promoData);
+  }
+
+  @Put('promo-codes/:id')
+  async updatePromoCode(@Param('id') id: string, @Body() promoData: any) {
+    return this.adminService.updatePromoCode(id, promoData);
+  }
+
+  @Put('promo-codes/:id/toggle')
+  async togglePromoCode(@Param('id') id: string) {
+    return this.adminService.togglePromoCodeStatus(id);
+  }
+
+  @Delete('promo-codes/:id')
+  async deletePromoCode(@Param('id') id: string) {
+    return this.adminService.deletePromoCode(id);
+  }
+
+  // 📝 Gestion du contenu du site
+  @Get('site-content')
+  async getSiteContent() {
+    return this.adminService.getSiteContent();
+  }
+
+  @Put('site-content')
+  async updateSiteContent(@Body() contentData: any, @Request() req: any) {
+    return this.adminService.updateSiteContent(contentData, req.user.id);
+  }
+
+  // 🐛 Gestion des tickets
+  @Get('tickets')
+  async getTickets(
+    @Query('status') status?: string,
+    @Query('priority') priority?: string,
+  ) {
+    return this.adminService.getTickets(status, priority);
+  }
+
+  @Get('tickets/:id')
+  async getTicketDetails(@Param('id') id: string) {
+    return this.adminService.getTicketDetails(id);
+  }
+
+  @Put('tickets/:id/status')
+  async updateTicketStatus(
+    @Param('id') id: string,
+    @Body() body: { status: string },
+  ) {
+    return this.adminService.updateTicketStatus(id, body.status);
+  }
+
+  @Put('tickets/:id/assign')
+  async assignTicket(
+    @Param('id') id: string,
+    @Body() body: { adminId: string },
+  ) {
+    return this.adminService.assignTicket(id, body.adminId);
+  }
+
+  @Post('tickets/:id/messages')
+  async addTicketMessage(
+    @Param('id') id: string,
+    @Body() body: { message: string },
+    @Request() req: any,
+  ) {
+    return this.adminService.addTicketMessage(id, body.message, req.user.id);
+  }
+
+  // 🛠️ Paramètres système
+  @Get('settings')
+  async getSystemSettings() {
+    return this.adminService.getSystemSettings();
+  }
+
+  @Put('settings')
+  async updateSystemSettings(@Body() settings: any, @Request() req: any) {
+    return this.adminService.updateSystemSettings(settings, req.user.id);
+  }
+
+  @Post('settings/backup')
+  async createBackup() {
+    return this.adminService.createDatabaseBackup();
+  }
+
+  @Post('settings/cleanup-logs')
+  async cleanupLogs(@Body() body: { olderThanDays: number }) {
+    return this.adminService.cleanupSystemLogs(body.olderThanDays);
+  }
+
+  @Get('settings/system-report')
+  async getSystemReport() {
+    return this.adminService.getSystemReport();
+  }
+
+  // 🔒 Gestion des rôles admin
+  @Get('admins')
+  async getAdmins() {
+    return this.adminService.getAdmins();
+  }
+
+  @Post('admins')
+  async createAdmin(@Body() adminData: any) {
+    return this.adminService.createAdmin(adminData);
+  }
+
+  @Put('admins/:id/role')
+  async updateAdminRole(
+    @Param('id') id: string,
+    @Body() body: { role: string },
+  ) {
+    return this.adminService.updateAdminRole(id, body.role);
+  }
+
+  @Delete('admins/:id')
+  async removeAdmin(@Param('id') id: string) {
+    return this.adminService.removeAdmin(id);
+  }
+
+  // 📊 Logs système
+  @Get('logs')
+  async getSystemLogs(
+    @Query('level') level?: string,
+    @Query('category') category?: string,
+    @Query('page') page?: string,
+  ) {
+    return this.adminService.getSystemLogs(
+      level,
+      category,
+      page ? parseInt(page) : 1,
+    );
+  }
+
+  // 📈 Statistiques avancées
+  @Get('analytics/revenue')
+  async getRevenueAnalytics(@Query('period') period?: string) {
+    return this.adminService.getRevenueAnalytics(period || '30d');
+  }
+
+  @Get('analytics/users')
+  async getUserAnalytics(@Query('period') period?: string) {
+    return this.adminService.getUserAnalytics(period || '30d');
+  }
+
+  @Get('analytics/invoices')
+  async getInvoiceAnalytics(@Query('period') period?: string) {
+    return this.adminService.getInvoiceAnalytics(period || '30d');
+  }
+}

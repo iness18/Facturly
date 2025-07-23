@@ -1,5 +1,6 @@
 // Service d'authentification avec gestion des sessions
 import React from "react";
+import { apiService } from "./api";
 
 interface User {
   id: string;
@@ -37,15 +38,6 @@ class AuthService {
   // Connexion utilisateur
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     try {
-      // TODO: Remplacer par un vrai appel API
-      // const response = await fetch('/api/auth/login', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(credentials)
-      // });
-
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
       // Vérification des identifiants admin (compte par défaut)
       if (
         credentials.email === "admin@facturly.com" &&
@@ -70,8 +62,40 @@ class AuthService {
         };
       }
 
-      // Pour les autres utilisateurs, vérifier dans la base de données
-      // En attendant l'API, on simule un échec
+      // Appel à l'API backend pour la connexion
+      const response = await apiService.login({
+        email: credentials.email,
+        password: credentials.password,
+      });
+
+      if (response.error) {
+        return {
+          success: false,
+          error: response.error,
+        };
+      }
+
+      if (response.data && response.data.success) {
+        const user: User = {
+          id: response.data.user.id,
+          email: response.data.user.email,
+          name: response.data.user.name,
+          role: response.data.user.role,
+          company: response.data.user.company,
+        };
+
+        const token = "jwt-token-" + Date.now(); // TODO: Utiliser un vrai JWT
+
+        // Sauvegarder la session
+        this.saveSession(user, token, credentials.rememberMe);
+
+        return {
+          success: true,
+          user,
+          token,
+        };
+      }
+
       return {
         success: false,
         error: "Email ou mot de passe incorrect",
@@ -79,7 +103,7 @@ class AuthService {
     } catch (error) {
       return {
         success: false,
-        error: "Erreur de connexion",
+        error: error instanceof Error ? error.message : "Erreur de connexion",
       };
     }
   }
@@ -99,45 +123,60 @@ class AuthService {
     phone?: string;
   }): Promise<AuthResponse> {
     try {
-      // TODO: Remplacer par un vrai appel API
-      // const response = await fetch('/api/auth/register', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(userData)
-      // });
-
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-
-      // Simulation de création d'utilisateur
-      const user: User = {
-        id: "user-" + Date.now(),
+      // Appel à l'API backend pour l'inscription
+      const response = await apiService.register({
         email: userData.email,
+        password: userData.password,
         name: `${userData.firstName} ${userData.lastName}`,
-        role: "USER",
-        // Informations d'entreprise
         company: userData.company,
-        companyAddress: userData.companyAddress,
-        companyPostalCode: userData.companyPostalCode,
-        companyCity: userData.companyCity,
-        companySiret: userData.companySiret,
-        companyLegalForm: userData.companyLegalForm,
-        phone: userData.phone,
-      };
+      });
 
-      const token = "jwt-token-" + Date.now();
+      if (response.error) {
+        return {
+          success: false,
+          error: response.error,
+        };
+      }
 
-      // Sauvegarder la session (par défaut, on se souvient de l'utilisateur après inscription)
-      this.saveSession(user, token, true);
+      if (response.data && response.data.success) {
+        const user: User = {
+          id: response.data.user.id,
+          email: response.data.user.email,
+          name: response.data.user.name,
+          role: response.data.user.role,
+          company: response.data.user.company,
+          // Informations d'entreprise (stockées côté frontend pour l'instant)
+          companyAddress: userData.companyAddress,
+          companyPostalCode: userData.companyPostalCode,
+          companyCity: userData.companyCity,
+          companySiret: userData.companySiret,
+          companyLegalForm: userData.companyLegalForm,
+          phone: userData.phone,
+        };
+
+        const token = "jwt-token-" + Date.now(); // TODO: Utiliser un vrai JWT
+
+        // Sauvegarder la session (par défaut, on se souvient de l'utilisateur après inscription)
+        this.saveSession(user, token, true);
+
+        return {
+          success: true,
+          user,
+          token,
+        };
+      }
 
       return {
-        success: true,
-        user,
-        token,
+        success: false,
+        error: "Erreur lors de l'inscription",
       };
     } catch (error) {
       return {
         success: false,
-        error: "Erreur lors de l'inscription",
+        error:
+          error instanceof Error
+            ? error.message
+            : "Erreur lors de l'inscription",
       };
     }
   }

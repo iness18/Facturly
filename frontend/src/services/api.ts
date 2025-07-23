@@ -23,7 +23,10 @@ class ApiService {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        throw new Error(
+          `HTTP error! status: ${response.status}, message: ${errorText}`
+        );
       }
 
       const data = await response.json();
@@ -107,6 +110,27 @@ class ApiService {
     return this.request<any>("/users/profile", {
       method: "PATCH",
       body: JSON.stringify(userData),
+    });
+  }
+
+  // === AUTHENTIFICATION ===
+
+  async register(userData: {
+    email: string;
+    password: string;
+    name: string;
+    company?: string;
+  }) {
+    return this.request<any>("/auth/register", {
+      method: "POST",
+      body: JSON.stringify(userData),
+    });
+  }
+
+  async login(credentials: { email: string; password: string }) {
+    return this.request<any>("/auth/login", {
+      method: "POST",
+      body: JSON.stringify(credentials),
     });
   }
 
