@@ -178,6 +178,54 @@ class StorageService {
 
     localStorage.removeItem(this.INVOICES_KEY);
     localStorage.removeItem(this.RECENT_TASKS_KEY);
+    localStorage.removeItem(this.CLIENTS_KEY);
+  }
+
+  // Nettoyer les tâches récentes orphelines (sans factures/clients correspondants)
+  cleanupOrphanedTasks(): void {
+    if (typeof window === "undefined") return;
+
+    try {
+      const tasks = this.getRecentTasks();
+      const invoices = this.getInvoices();
+      const clients = this.getClientsRaw();
+
+      // Filtrer les tâches qui ont encore des données correspondantes
+      const validTasks = tasks.filter((task) => {
+        if (
+          task.type === "invoice_created" ||
+          task.type === "invoice_sent" ||
+          task.type === "payment_received"
+        ) {
+          // Vérifier si la facture existe encore
+          return invoices.some(
+            (invoice) =>
+              task.description.includes(invoice.number) ||
+              task.description.includes(invoice.client)
+          );
+        }
+        if (task.type === "client_added") {
+          // Vérifier si le client existe encore
+          return clients.some((client) =>
+            task.description.includes(client.name)
+          );
+        }
+        return false;
+      });
+
+      // Sauvegarder seulement les tâches valides
+      localStorage.setItem(this.RECENT_TASKS_KEY, JSON.stringify(validTasks));
+    } catch (error) {
+      console.error("Erreur lors du nettoyage des tâches orphelines:", error);
+    }
+  }
+
+  // Initialiser le service (à appeler au démarrage de l'app)
+  initialize(): void {
+    if (typeof window === "undefined") return;
+
+    // Nettoyer les tâches orphelines au démarrage
+    this.cleanupOrphanedTasks();
   }
 
   exportData(): string {

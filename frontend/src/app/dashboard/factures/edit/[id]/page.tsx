@@ -54,12 +54,12 @@ export default function EditInvoicePage() {
     setTimeout(() => {
       setFormData({
         number: `FAC-2024-${invoiceId}`,
-        client: "ABC Corporation",
-        clientEmail: "contact@abc-corp.com",
-        description: "Services de développement web",
-        amount: "1250.00",
-        dueDate: "2024-02-15",
-        notes: "Paiement sous 30 jours",
+        client: "",
+        clientEmail: "",
+        description: "",
+        amount: "",
+        dueDate: "",
+        notes: "",
         status: "draft",
       });
       setIsLoading(false);

@@ -304,7 +304,7 @@ function CreateClientContent() {
                     required
                     value={formData.name}
                     onChange={(e) => handleInputChange("name", e.target.value)}
-                    placeholder="Ex: Jean Dupont"
+                    placeholder="Nom complet du client"
                     style={{
                       width: "100%",
                       padding: "12px 16px",
@@ -400,7 +400,7 @@ function CreateClientContent() {
                     onChange={(e) =>
                       handleInputChange("company", e.target.value)
                     }
-                    placeholder="ABC Corporation"
+                    placeholder="Nom de l'entreprise"
                     style={{
                       width: "100%",
                       padding: "12px 16px",
@@ -458,7 +458,7 @@ function CreateClientContent() {
                     onChange={(e) =>
                       handleInputChange("address", e.target.value)
                     }
-                    placeholder="123 Rue de la Paix"
+                    placeholder="Adresse complète"
                     rows={2}
                     style={{
                       width: "100%",

@@ -78,9 +78,6 @@ export default function HomePage() {
               gap: "32px",
             }}
           >
-            <a href="#" style={{ color: "#d1d5db", textDecoration: "none" }}>
-              Accueil
-            </a>
             <a
               href="/fonctionnalites"
               style={{ color: "#d1d5db", textDecoration: "none" }}
@@ -322,7 +319,8 @@ export default function HomePage() {
             >
               Commencer Gratuitement →
             </a>
-            <button
+            <a
+              href="/demo"
               style={{
                 background: "rgba(255, 255, 255, 0.1)",
                 backdropFilter: "blur(10px)",
@@ -333,10 +331,14 @@ export default function HomePage() {
                 fontSize: "1.125rem",
                 fontWeight: "600",
                 cursor: "pointer",
+                textDecoration: "none",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
               }}
             >
               Voir la Démo
-            </button>
+            </a>
           </div>
 
           {/* Stats */}

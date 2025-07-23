@@ -22,9 +22,9 @@ function CreateInvoiceContent() {
   const [selectedClientId, setSelectedClientId] = useState<string>("");
 
   const [formData, setFormData] = useState({
-    sellerName: "Iness Br.",
-    sellerAddress: "123 Rue de la Facturation\n75001 Paris",
-    sellerSiret: "12345678901234",
+    sellerName: "",
+    sellerAddress: "",
+    sellerSiret: "",
     clientName: "",
     clientAddress: "",
     invoiceNumber: "",

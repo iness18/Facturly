@@ -50,12 +50,12 @@ const RevenueModal = ({
 
   // Données d'exemple pour les graphiques
   const monthlyData = [
-    { month: "Jan", revenue: 800, expenses: 200 },
-    { month: "Fév", revenue: 1200, expenses: 300 },
-    { month: "Mar", revenue: 950, expenses: 250 },
-    { month: "Avr", revenue: 1400, expenses: 350 },
-    { month: "Mai", revenue: 1100, expenses: 280 },
-    { month: "Juin", revenue: 1250, expenses: 320 },
+    { month: "Jan", revenue: 0, expenses: 0 },
+    { month: "Fév", revenue: 0, expenses: 0 },
+    { month: "Mar", revenue: 0, expenses: 0 },
+    { month: "Avr", revenue: 0, expenses: 0 },
+    { month: "Mai", revenue: 0, expenses: 0 },
+    { month: "Juin", revenue: 0, expenses: 0 },
   ];
 
   const currentMonth = monthlyData[monthlyData.length - 1];
@@ -952,6 +952,11 @@ export default function DashboardPage() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isRevenueModalOpen, setIsRevenueModalOpen] = useState(false);
   const router = useRouter();
+
+  // Initialiser le service de stockage au montage du composant
+  useEffect(() => {
+    storageService.initialize();
+  }, []);
 
   const handleRevenueClick = () => {
     setIsRevenueModalOpen(true);

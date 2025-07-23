@@ -46,61 +46,7 @@ const Card = ({
 };
 
 // Données d'exemple pour les événements
-const sampleEvents: CalendarEvent[] = [
-  {
-    id: "1",
-    title: "Facture envoyée - ACME Corp",
-    date: new Date(2025, 0, 15), // 15 janvier 2025
-    type: "invoice_sent",
-    description: "Facture #FAC-2025-001 envoyée",
-    invoiceId: "FAC-2025-001",
-    clientName: "ACME Corp",
-    amount: 2500,
-    status: "completed",
-  },
-  {
-    id: "2",
-    title: "Échéance - TechStart SAS",
-    date: new Date(2025, 0, 20), // 20 janvier 2025
-    type: "invoice_due",
-    description: "Échéance de paiement",
-    invoiceId: "FAC-2025-002",
-    clientName: "TechStart SAS",
-    amount: 1800,
-    status: "pending",
-  },
-  {
-    id: "3",
-    title: "Relance automatique - Digital Solutions",
-    date: new Date(2025, 0, 25), // 25 janvier 2025
-    type: "reminder",
-    description: "Relance automatique pour facture en retard",
-    invoiceId: "FAC-2024-156",
-    clientName: "Digital Solutions",
-    amount: 3200,
-    status: "overdue",
-  },
-  {
-    id: "4",
-    title: "Paiement reçu - Innovation Lab",
-    date: new Date(2025, 0, 18), // 18 janvier 2025
-    type: "payment_received",
-    description: "Paiement reçu pour facture #FAC-2025-003",
-    invoiceId: "FAC-2025-003",
-    clientName: "Innovation Lab",
-    amount: 4500,
-    status: "completed",
-  },
-  {
-    id: "5",
-    title: "Réunion client - Startup Inc",
-    date: new Date(2025, 0, 22), // 22 janvier 2025
-    type: "manual",
-    description: "Réunion de suivi projet",
-    clientName: "Startup Inc",
-    status: "pending",
-  },
-];
+const sampleEvents: CalendarEvent[] = [];
 
 // Composant pour afficher un événement
 const EventItem = ({ event }: { event: CalendarEvent }) => {

@@ -6,6 +6,14 @@ interface User {
   email: string;
   name: string;
   role: "USER" | "ADMIN";
+  // Informations d'entreprise
+  company?: string;
+  companyAddress?: string;
+  companyPostalCode?: string;
+  companyCity?: string;
+  companySiret?: string;
+  companyLegalForm?: string;
+  phone?: string;
 }
 
 interface LoginCredentials {
@@ -29,34 +37,16 @@ class AuthService {
   // Connexion utilisateur
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     try {
-      // Simulation d'appel API (à remplacer par un vrai appel)
+      // TODO: Remplacer par un vrai appel API
+      // const response = await fetch('/api/auth/login', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify(credentials)
+      // });
+
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      // Vérification des identifiants de démo
-      if (
-        credentials.email === "demo@facturly.com" &&
-        credentials.password === "demo123"
-      ) {
-        const user: User = {
-          id: "demo-user-id",
-          email: "demo@facturly.com",
-          name: "Utilisateur Démo",
-          role: "USER",
-        };
-
-        const token = "demo-jwt-token-" + Date.now();
-
-        // Sauvegarder la session
-        this.saveSession(user, token, credentials.rememberMe);
-
-        return {
-          success: true,
-          user,
-          token,
-        };
-      }
-
-      // Vérification des identifiants admin
+      // Vérification des identifiants admin (compte par défaut)
       if (
         credentials.email === "admin@facturly.com" &&
         credentials.password === "Admin123!"
@@ -80,6 +70,8 @@ class AuthService {
         };
       }
 
+      // Pour les autres utilisateurs, vérifier dans la base de données
+      // En attendant l'API, on simule un échec
       return {
         success: false,
         error: "Email ou mot de passe incorrect",
@@ -88,6 +80,64 @@ class AuthService {
       return {
         success: false,
         error: "Erreur de connexion",
+      };
+    }
+  }
+
+  // Inscription utilisateur
+  async register(userData: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    password: string;
+    company: string;
+    companyAddress: string;
+    companyPostalCode: string;
+    companyCity: string;
+    companySiret: string;
+    companyLegalForm: string;
+    phone?: string;
+  }): Promise<AuthResponse> {
+    try {
+      // TODO: Remplacer par un vrai appel API
+      // const response = await fetch('/api/auth/register', {
+      //   method: 'POST',
+      //   headers: { 'Content-Type': 'application/json' },
+      //   body: JSON.stringify(userData)
+      // });
+
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+
+      // Simulation de création d'utilisateur
+      const user: User = {
+        id: "user-" + Date.now(),
+        email: userData.email,
+        name: `${userData.firstName} ${userData.lastName}`,
+        role: "USER",
+        // Informations d'entreprise
+        company: userData.company,
+        companyAddress: userData.companyAddress,
+        companyPostalCode: userData.companyPostalCode,
+        companyCity: userData.companyCity,
+        companySiret: userData.companySiret,
+        companyLegalForm: userData.companyLegalForm,
+        phone: userData.phone,
+      };
+
+      const token = "jwt-token-" + Date.now();
+
+      // Sauvegarder la session (par défaut, on se souvient de l'utilisateur après inscription)
+      this.saveSession(user, token, true);
+
+      return {
+        success: true,
+        user,
+        token,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: "Erreur lors de l'inscription",
       };
     }
   }

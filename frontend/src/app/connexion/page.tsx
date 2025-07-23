@@ -210,54 +210,6 @@ export default function ConnexionPage() {
             margin: "0 auto",
           }}
         >
-          {/* Demo Info */}
-          <div
-            style={{
-              background: "rgba(59, 130, 246, 0.1)",
-              border: "1px solid rgba(59, 130, 246, 0.3)",
-              borderRadius: "12px",
-              padding: "20px",
-              marginBottom: "32px",
-              textAlign: "center",
-            }}
-          >
-            <div style={{ fontSize: "1.5rem", marginBottom: "12px" }}>💡</div>
-            <h3
-              style={{
-                color: "#3b82f6",
-                marginBottom: "8px",
-                fontSize: "1.125rem",
-              }}
-            >
-              Compte de démonstration
-            </h3>
-            <p
-              style={{
-                color: "#d1d5db",
-                fontSize: "14px",
-                marginBottom: "12px",
-              }}
-            >
-              Utilisez ces identifiants pour tester l'application :
-            </p>
-            <div
-              style={{
-                background: "rgba(0, 0, 0, 0.2)",
-                padding: "12px",
-                borderRadius: "8px",
-                fontFamily: "monospace",
-                fontSize: "14px",
-              }}
-            >
-              <div style={{ marginBottom: "4px" }}>
-                <strong>Email:</strong> demo@facturly.com
-              </div>
-              <div>
-                <strong>Mot de passe:</strong> demo123
-              </div>
-            </div>
-          </div>
-
           <div
             style={{
               background: "rgba(255, 255, 255, 0.05)",

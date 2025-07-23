@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/services/auth";
 
 // Composant Card réutilisable
 const Card = ({
@@ -145,12 +146,23 @@ const Tabs = ({
 
 // Composant GeneralProfileForm
 const GeneralProfileForm = () => {
+  const { user } = useAuth();
   const [formData, setFormData] = useState({
-    fullName: "Jean Dupont",
-    email: "jean.dupont@example.com",
+    fullName: "",
+    email: "",
   });
 
   const [isEditing, setIsEditing] = useState(false);
+
+  // Charger les données de l'utilisateur connecté
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        fullName: user.name || "",
+        email: user.email || "",
+      });
+    }
+  }, [user]);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({
@@ -1823,31 +1835,32 @@ const SecurityContent = () => {
 };
 
 const CompanyContent = () => {
+  const { user } = useAuth();
   const [companyData, setCompanyData] = useState({
     // Informations générales
-    companyName: "Facturly SARL",
+    companyName: "",
     legalForm: "SARL",
-    siret: "12345678901234",
-    siren: "123456789",
-    vatNumber: "FR12345678901",
-    nafCode: "6201Z",
+    siret: "",
+    siren: "",
+    vatNumber: "",
+    nafCode: "",
 
     // Adresse
-    address: "123 Rue de la Facturation",
-    addressComplement: "Bâtiment A",
-    postalCode: "75001",
-    city: "Paris",
+    address: "",
+    addressComplement: "",
+    postalCode: "",
+    city: "",
     country: "France",
 
     // Contact
-    phone: "+33 1 23 45 67 89",
-    email: "contact@facturly.com",
-    website: "https://www.facturly.com",
+    phone: "",
+    email: "",
+    website: "",
 
     // Informations bancaires
-    bankName: "Banque Populaire",
-    iban: "FR76 1234 5678 9012 3456 7890 123",
-    bic: "CCBPFRPPXXX",
+    bankName: "",
+    iban: "",
+    bic: "",
 
     // Branding
     logoUrl: "",
@@ -1855,10 +1868,27 @@ const CompanyContent = () => {
     secondaryColor: "#ec4899",
 
     // Informations légales
-    capital: "10000",
-    registrationCity: "Paris",
-    registrationNumber: "RCS Paris B 123 456 789",
+    capital: "",
+    registrationCity: "",
+    registrationNumber: "",
   });
+
+  // Charger les données de l'utilisateur connecté
+  useEffect(() => {
+    if (user) {
+      setCompanyData((prev) => ({
+        ...prev,
+        companyName: user.company || "",
+        legalForm: user.companyLegalForm || "SARL",
+        siret: user.companySiret || "",
+        address: user.companyAddress || "",
+        postalCode: user.companyPostalCode || "",
+        city: user.companyCity || "",
+        phone: user.phone || "",
+        email: user.email || "",
+      }));
+    }
+  }, [user]);
 
   const [isEditing, setIsEditing] = useState({
     general: false,

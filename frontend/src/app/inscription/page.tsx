@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import Navigation from "@/components/layout/Navigation";
+import { authService } from "@/services/auth";
 
 interface FormData {
   firstName: string;
@@ -175,16 +176,31 @@ export default function InscriptionPage() {
     setIsSubmitting(true);
 
     try {
-      // Simulation d'inscription (à remplacer par une vraie API)
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      // Appel au service d'authentification pour l'inscription
+      const result = await authService.register({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        password: formData.password,
+        company: formData.company,
+        companyAddress: formData.companyAddress,
+        companyPostalCode: formData.companyPostalCode,
+        companyCity: formData.companyCity,
+        companySiret: formData.companySiret,
+        companyLegalForm: formData.companyLegalForm,
+        phone: formData.phone,
+      });
 
-      // Simulation d'une réponse réussie
-      setSubmitStatus("success");
+      if (result.success) {
+        setSubmitStatus("success");
 
-      // Redirection vers le dashboard après 2 secondes
-      setTimeout(() => {
-        window.location.href = "/dashboard";
-      }, 2000);
+        // Redirection vers le dashboard après 2 secondes
+        setTimeout(() => {
+          window.location.href = "/dashboard";
+        }, 2000);
+      } else {
+        setSubmitStatus("error");
+      }
     } catch (error) {
       setSubmitStatus("error");
     } finally {
@@ -1010,7 +1026,7 @@ export default function InscriptionPage() {
                     name="companyAddress"
                     value={formData.companyAddress}
                     onChange={handleInputChange}
-                    placeholder="123 Rue de l'Entreprise"
+                    placeholder="Adresse complète de l'entreprise"
                     style={{
                       width: "100%",
                       padding: "12px 16px",
