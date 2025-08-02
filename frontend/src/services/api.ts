@@ -32,10 +32,26 @@ class ApiService {
       const data = await response.json();
       return { data };
     } catch (error) {
-      console.error("API Error:", error);
+      console.error("Erreur API:", error);
+
+      // Traduire les erreurs de fetch en français
+      let errorMessage = "Une erreur est survenue";
+
+      if (error instanceof Error) {
+        if (error.message.includes("Failed to fetch")) {
+          errorMessage =
+            "Impossible de se connecter au serveur. Vérifiez votre connexion.";
+        } else if (error.message.includes("NetworkError")) {
+          errorMessage = "Erreur de réseau. Vérifiez votre connexion internet.";
+        } else if (error.message.includes("HTTP error")) {
+          errorMessage = "Erreur du serveur. Veuillez réessayer plus tard.";
+        } else {
+          errorMessage = error.message;
+        }
+      }
+
       return {
-        error:
-          error instanceof Error ? error.message : "Une erreur est survenue",
+        error: errorMessage,
       };
     }
   }

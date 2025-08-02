@@ -3,6 +3,7 @@ import { AdminSimpleController } from './admin-simple.controller';
 import { AdminDashboardSimpleService } from './admin-dashboard-simple.service';
 import { AdminUsersSimpleService } from './admin-users-simple.service';
 import { AdminPacksSimpleService } from './admin-packs-simple.service';
+import { AdminMockService } from './admin-mock.service';
 import { DatabaseModule } from '../database/database.module';
 
 @Module({
@@ -12,11 +13,13 @@ import { DatabaseModule } from '../database/database.module';
     AdminDashboardSimpleService,
     AdminUsersSimpleService,
     AdminPacksSimpleService,
+    AdminMockService,
   ],
   exports: [
     AdminDashboardSimpleService,
     AdminUsersSimpleService,
     AdminPacksSimpleService,
+    AdminMockService,
   ],
 })
 export class AdminModule {}

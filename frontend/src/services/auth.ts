@@ -77,9 +77,23 @@ class AuthService {
         error: "Email ou mot de passe incorrect",
       };
     } catch (error) {
+      let errorMessage = "Erreur de connexion";
+
+      if (error instanceof Error) {
+        if (error.message.includes("Impossible de se connecter")) {
+          errorMessage =
+            "Impossible de se connecter au serveur. Vérifiez que le serveur est démarré.";
+        } else if (error.message.includes("Failed to fetch")) {
+          errorMessage =
+            "Échec de la connexion au serveur. Vérifiez votre connexion.";
+        } else {
+          errorMessage = error.message;
+        }
+      }
+
       return {
         success: false,
-        error: error instanceof Error ? error.message : "Erreur de connexion",
+        error: errorMessage,
       };
     }
   }
@@ -147,12 +161,23 @@ class AuthService {
         error: "Erreur lors de l'inscription",
       };
     } catch (error) {
+      let errorMessage = "Erreur lors de l'inscription";
+
+      if (error instanceof Error) {
+        if (error.message.includes("Impossible de se connecter")) {
+          errorMessage =
+            "Impossible de se connecter au serveur. Vérifiez que le serveur est démarré.";
+        } else if (error.message.includes("Failed to fetch")) {
+          errorMessage =
+            "Échec de la connexion au serveur. Vérifiez votre connexion.";
+        } else {
+          errorMessage = error.message;
+        }
+      }
+
       return {
         success: false,
-        error:
-          error instanceof Error
-            ? error.message
-            : "Erreur lors de l'inscription",
+        error: errorMessage,
       };
     }
   }

@@ -290,52 +290,29 @@ export default function AdminLoginPage() {
           </button>
         </form>
 
-        {/* Demo Credentials */}
-        <div
-          style={{
-            background: "rgba(59, 130, 246, 0.1)",
-            border: "1px solid rgba(59, 130, 246, 0.3)",
-            borderRadius: "12px",
-            padding: "20px",
-            textAlign: "center",
-          }}
-        >
-          <div style={{ fontSize: "1.5rem", marginBottom: "12px" }}>💡</div>
-          <h3
+        {/* Navigation Links */}
+        <div style={{ textAlign: "center", marginTop: "16px" }}>
+          <a
+            href="/"
             style={{
-              color: "#3b82f6",
-              marginBottom: "8px",
-              fontSize: "1.125rem",
-              fontWeight: "600",
-            }}
-          >
-            Identifiants de démonstration
-          </h3>
-          <p
-            style={{
-              color: "#d1d5db",
+              color: "#9ca3af",
               fontSize: "14px",
-              marginBottom: "12px",
+              textDecoration: "none",
+              marginRight: "16px",
             }}
           >
-            Utilisez ces identifiants pour tester l'administration :
-          </p>
-          <div
+            ← Retour à l'accueil
+          </a>
+          <a
+            href="/contact"
             style={{
-              background: "rgba(0, 0, 0, 0.2)",
-              padding: "12px",
-              borderRadius: "8px",
-              fontFamily: "monospace",
+              color: "#9ca3af",
               fontSize: "14px",
+              textDecoration: "none",
             }}
           >
-            <div style={{ marginBottom: "4px" }}>
-              <strong>Email:</strong> admin@facturly.com
-            </div>
-            <div>
-              <strong>Mot de passe:</strong> Admin123!
-            </div>
-          </div>
+            Besoin d'aide ?
+          </a>
         </div>
       </div>
     </div>

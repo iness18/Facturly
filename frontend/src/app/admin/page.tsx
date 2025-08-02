@@ -290,6 +290,21 @@ export default function AdminPage() {
       ]);
     } catch (error) {
       console.error("Erreur lors du chargement des données admin:", error);
+
+      // Afficher un message d'erreur plus explicite
+      let errorMessage = "Erreur de connexion au serveur";
+      if (error instanceof Error) {
+        if (error.message.includes("Failed to fetch")) {
+          errorMessage =
+            "Impossible de se connecter au serveur. Vérifiez que le backend est démarré sur le port 3001.";
+        } else if (error.message.includes("NetworkError")) {
+          errorMessage = "Erreur de réseau. Vérifiez votre connexion internet.";
+        }
+      }
+
+      // Afficher l'erreur à l'utilisateur
+      alert(`⚠️ ${errorMessage}\n\nLes données par défaut seront affichées.`);
+
       // Données par défaut en cas d'erreur
       setStats({
         totalUsers: 0,
@@ -362,7 +377,13 @@ export default function AdminPage() {
       }
     } catch (error) {
       console.error("Erreur lors de la suppression:", error);
-      alert("❌ Erreur de connexion lors de la suppression de l'utilisateur.");
+      let errorMessage =
+        "Erreur de connexion lors de la suppression de l'utilisateur.";
+      if (error instanceof Error && error.message.includes("Failed to fetch")) {
+        errorMessage =
+          "Impossible de se connecter au serveur. Vérifiez que le backend est démarré.";
+      }
+      alert(`❌ ${errorMessage}`);
     }
   };
 
@@ -575,7 +596,12 @@ export default function AdminPage() {
       }
     } catch (error) {
       console.error("Erreur:", error);
-      alert("Erreur de connexion");
+      let errorMessage = "Erreur de connexion";
+      if (error instanceof Error && error.message.includes("Failed to fetch")) {
+        errorMessage =
+          "Impossible de se connecter au serveur. Vérifiez que le backend est démarré.";
+      }
+      alert(`❌ ${errorMessage}`);
     }
   };
 
@@ -614,7 +640,12 @@ export default function AdminPage() {
       }
     } catch (error) {
       console.error("Erreur:", error);
-      alert("Erreur de connexion");
+      let errorMessage = "Erreur de connexion";
+      if (error instanceof Error && error.message.includes("Failed to fetch")) {
+        errorMessage =
+          "Impossible de se connecter au serveur. Vérifiez que le backend est démarré.";
+      }
+      alert(`❌ ${errorMessage}`);
     }
   };
 
@@ -648,7 +679,12 @@ export default function AdminPage() {
       }
     } catch (error) {
       console.error("Erreur:", error);
-      alert("Erreur de connexion");
+      let errorMessage = "Erreur de connexion";
+      if (error instanceof Error && error.message.includes("Failed to fetch")) {
+        errorMessage =
+          "Impossible de se connecter au serveur. Vérifiez que le backend est démarré.";
+      }
+      alert(`❌ ${errorMessage}`);
     }
   };
 
@@ -674,7 +710,12 @@ export default function AdminPage() {
       }
     } catch (error) {
       console.error("Erreur:", error);
-      alert("Erreur de connexion");
+      let errorMessage = "Erreur de connexion";
+      if (error instanceof Error && error.message.includes("Failed to fetch")) {
+        errorMessage =
+          "Impossible de se connecter au serveur. Vérifiez que le backend est démarré.";
+      }
+      alert(`❌ ${errorMessage}`);
     }
   };
 

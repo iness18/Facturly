@@ -7,6 +7,26 @@ export class PrismaService
   implements OnModuleInit, OnModuleDestroy
 {
   async onModuleInit() {
+    // En mode développement, on essaie de se connecter mais on ne bloque pas
+    if (process.env.NODE_ENV === 'development') {
+      try {
+        await this.$connect();
+        console.log('✅ Connected to database');
+        return;
+      } catch (error) {
+        console.log(
+          '⚠️ Database connection failed. Continuing in development mode without database',
+        );
+        console.log('🔧 Pour résoudre ce problème:');
+        console.log('   1. Démarrez Docker Desktop');
+        console.log('   2. Exécutez: docker-compose up -d db');
+        console.log('   3. Ou installez PostgreSQL localement');
+        console.log('📊 Le backend fonctionnera avec des données de test');
+        return;
+      }
+    }
+
+    // En production, on essaie plusieurs fois
     let retries = 3;
     while (retries > 0) {
       try {
@@ -26,13 +46,6 @@ export class PrismaService
       }
     }
 
-    // Si toutes les tentatives échouent
-    if (process.env.NODE_ENV === 'development') {
-      console.log(
-        '⚠️ All connection attempts failed. Continuing in development mode without database',
-      );
-      return;
-    }
     throw new Error('Failed to connect to database after 3 attempts');
   }
 
