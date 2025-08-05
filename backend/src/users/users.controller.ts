@@ -18,19 +18,24 @@ export class UsersController {
   @Get('profile')
   async getProfile(@Request() req: any) {
     // TODO: Récupérer l'ID depuis le token JWT
-    const userId = 'temp-user-id';
-    return this.usersService.findById(userId);
+    // Pour l'instant, on utilise l'utilisateur de test
+    const user = await this.usersService.findByEmail('test@facturly.com');
+    if (!user) {
+      throw new Error('Utilisateur non trouvé');
+    }
+    return this.usersService.findById(user.id);
   }
 
   // Mettre à jour le profil de l'utilisateur connecté
   @Patch('profile')
-  async updateProfile(
-    @Request() req: any,
-    @Body() updateData: { name?: string; company?: string },
-  ) {
+  async updateProfile(@Request() req: any, @Body() updateData: any) {
     // TODO: Récupérer l'ID depuis le token JWT
-    const userId = 'temp-user-id';
-    return this.usersService.update(userId, updateData);
+    // Pour l'instant, on utilise l'utilisateur de test
+    const user = await this.usersService.findByEmail('test@facturly.com');
+    if (!user) {
+      throw new Error('Utilisateur non trouvé');
+    }
+    return this.usersService.update(user.id, updateData);
   }
 
   // Obtenir un utilisateur par ID (pour admin)

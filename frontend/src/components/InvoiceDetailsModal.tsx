@@ -2,6 +2,7 @@
 
 import React from "react";
 import { formatDate, formatCurrency } from "@/utils/storage";
+import { DownloadService } from "@/utils/downloadService";
 
 // Composant Card réutilisable
 const Card = ({
@@ -38,6 +39,34 @@ const InvoiceDetailsModal = ({
   onClose: () => void;
   invoice: any | null;
 }) => {
+  // Fonctions de téléchargement
+  const handleDownloadPDF = async () => {
+    if (!invoice) return;
+    try {
+      await DownloadService.downloadPDF(invoice.id);
+      DownloadService.showSuccessNotification(
+        `PDF de la facture ${invoice.number} téléchargé avec succès`
+      );
+    } catch (error) {
+      DownloadService.showErrorNotification(
+        `Erreur lors du téléchargement du PDF de la facture ${invoice.number}`
+      );
+    }
+  };
+
+  const handleDownloadCSV = async () => {
+    if (!invoice) return;
+    try {
+      await DownloadService.downloadCSV(invoice.id);
+      DownloadService.showSuccessNotification(
+        `CSV de la facture ${invoice.number} téléchargé avec succès`
+      );
+    } catch (error) {
+      DownloadService.showErrorNotification(
+        `Erreur lors du téléchargement du CSV de la facture ${invoice.number}`
+      );
+    }
+  };
   if (!isOpen || !invoice) return null;
 
   // Récupérer les données complètes de la facture
@@ -835,6 +864,7 @@ const InvoiceDetailsModal = ({
               justifyContent: "flex-end",
               paddingTop: "20px",
               borderTop: "1px solid rgba(255, 255, 255, 0.1)",
+              flexWrap: "wrap",
             }}
           >
             <button
@@ -847,9 +877,72 @@ const InvoiceDetailsModal = ({
                 borderRadius: "8px",
                 fontSize: "14px",
                 cursor: "pointer",
+                transition: "all 0.2s ease",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = "rgba(255, 255, 255, 0.2)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = "rgba(255, 255, 255, 0.1)";
               }}
             >
               Fermer
+            </button>
+            <button
+              onClick={handleDownloadPDF}
+              style={{
+                background: "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+                border: "none",
+                color: "#ffffff",
+                padding: "10px 20px",
+                borderRadius: "8px",
+                fontSize: "14px",
+                fontWeight: "600",
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "translateY(-1px)";
+                e.currentTarget.style.boxShadow =
+                  "0 4px 12px rgba(16, 185, 129, 0.3)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow = "none";
+              }}
+            >
+              📄 Télécharger PDF
+            </button>
+            <button
+              onClick={handleDownloadCSV}
+              style={{
+                background: "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
+                border: "none",
+                color: "#ffffff",
+                padding: "10px 20px",
+                borderRadius: "8px",
+                fontSize: "14px",
+                fontWeight: "600",
+                cursor: "pointer",
+                transition: "all 0.2s ease",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "translateY(-1px)";
+                e.currentTarget.style.boxShadow =
+                  "0 4px 12px rgba(59, 130, 246, 0.3)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow = "none";
+              }}
+            >
+              📊 Télécharger CSV
             </button>
             <button
               style={{
@@ -861,6 +954,19 @@ const InvoiceDetailsModal = ({
                 fontSize: "14px",
                 fontWeight: "600",
                 cursor: "pointer",
+                transition: "all 0.2s ease",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "translateY(-1px)";
+                e.currentTarget.style.boxShadow =
+                  "0 4px 12px rgba(139, 92, 246, 0.3)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow = "none";
               }}
             >
               📧 Envoyer par email

@@ -78,6 +78,7 @@ class StorageService {
     try {
       const invoices = this.getInvoices();
       const existingIndex = invoices.findIndex((inv) => inv.id === invoice.id);
+      const isNewInvoice = existingIndex < 0;
 
       if (existingIndex >= 0) {
         invoices[existingIndex] = invoice;
@@ -87,15 +88,17 @@ class StorageService {
 
       localStorage.setItem(this.INVOICES_KEY, JSON.stringify(invoices));
 
-      // Ajouter une tâche récente
-      this.addRecentTask({
-        id: `task_${Date.now()}`,
-        type: "invoice_created",
-        title: "Nouvelle facture créée",
-        description: `Facture ${invoice.number} pour ${invoice.client}`,
-        date: new Date().toISOString(),
-        icon: "📄",
-      });
+      // Ajouter une tâche récente SEULEMENT pour les nouvelles factures
+      if (isNewInvoice) {
+        this.addRecentTask({
+          id: `task_${Date.now()}`,
+          type: "invoice_created",
+          title: "Nouvelle facture créée",
+          description: `Facture ${invoice.number} pour ${invoice.client}`,
+          date: new Date().toISOString(),
+          icon: "📄",
+        });
+      }
     } catch (error) {
       console.error("Erreur lors de la sauvegarde de la facture:", error);
     }
@@ -142,6 +145,19 @@ class StorageService {
 
     try {
       const tasks = this.getRecentTasks();
+
+      // Vérifier s'il existe déjà une tâche similaire récente (même type et description)
+      const existingTaskIndex = tasks.findIndex(
+        (existingTask) =>
+          existingTask.type === task.type &&
+          existingTask.description === task.description
+      );
+
+      // Si une tâche similaire existe, la supprimer pour éviter les doublons
+      if (existingTaskIndex >= 0) {
+        tasks.splice(existingTaskIndex, 1);
+      }
+
       tasks.unshift(task); // Ajouter au début
 
       // Garder seulement les 20 tâches les plus récentes
@@ -288,6 +304,7 @@ class StorageService {
     try {
       const clients = this.getClientsRaw(); // Récupérer sans statistiques pour éviter les boucles
       const existingIndex = clients.findIndex((c) => c.id === client.id);
+      const isNewClient = existingIndex < 0;
 
       const now = new Date().toISOString();
 
@@ -305,20 +322,67 @@ class StorageService {
           updatedAt: now,
         });
 
-        // Ajouter une tâche récente pour un nouveau client
-        this.addRecentTask({
-          id: `task_${Date.now()}`,
-          type: "client_added",
-          title: "Nouveau client ajouté",
-          description: `Client ${client.name} ajouté`,
-          date: now,
-          icon: "👤",
-        });
+        // Ajouter une tâche récente SEULEMENT pour les nouveaux clients
+        if (isNewClient) {
+          this.addRecentTask({
+            id: `task_${Date.now()}`,
+            type: "client_added",
+            title: "Nouveau client ajouté",
+            description: `Client ${client.name} ajouté`,
+            date: now,
+            icon: "👤",
+          });
+        }
       }
 
       localStorage.setItem(this.CLIENTS_KEY, JSON.stringify(clients));
     } catch (error) {
       console.error("Erreur lors de la sauvegarde du client:", error);
+    }
+  }
+
+  // Méthode pour mettre à jour le statut d'une facture sans créer de tâche récente
+  updateInvoiceStatus(invoiceId: string, newStatus: Invoice["status"]): void {
+    if (typeof window === "undefined") return;
+
+    try {
+      const invoices = this.getInvoices();
+      const invoiceIndex = invoices.findIndex((inv) => inv.id === invoiceId);
+
+      if (invoiceIndex >= 0) {
+        const oldStatus = invoices[invoiceIndex].status;
+        invoices[invoiceIndex].status = newStatus;
+
+        localStorage.setItem(this.INVOICES_KEY, JSON.stringify(invoices));
+
+        // Ajouter une tâche récente seulement pour certains changements de statut importants
+        if (oldStatus !== newStatus) {
+          if (newStatus === "paid") {
+            this.addRecentTask({
+              id: `task_${Date.now()}`,
+              type: "payment_received",
+              title: "Paiement reçu",
+              description: `Facture ${invoices[invoiceIndex].number} payée`,
+              date: new Date().toISOString(),
+              icon: "💰",
+            });
+          } else if (newStatus === "sent" && oldStatus === "draft") {
+            this.addRecentTask({
+              id: `task_${Date.now()}`,
+              type: "invoice_sent",
+              title: "Facture envoyée",
+              description: `Facture ${invoices[invoiceIndex].number} envoyée à ${invoices[invoiceIndex].client}`,
+              date: new Date().toISOString(),
+              icon: "📤",
+            });
+          }
+        }
+      }
+    } catch (error) {
+      console.error(
+        "Erreur lors de la mise à jour du statut de la facture:",
+        error
+      );
     }
   }
 

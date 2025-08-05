@@ -47,6 +47,30 @@ export class UsersService {
         company: true,
         role: true,
         isActive: true,
+        // Informations vendeur
+        companyAddress: true,
+        companyPostalCode: true,
+        companyCity: true,
+        companyCountry: true,
+        companySiret: true,
+        companySiren: true,
+        companyVatNumber: true,
+        companyNafCode: true,
+        companyLegalForm: true,
+        companyCapital: true,
+        companyRegistrationCity: true,
+        companyRegistrationNumber: true,
+        // Contact
+        phone: true,
+        website: true,
+        // Banque
+        bankName: true,
+        bankIban: true,
+        bankBic: true,
+        // Branding
+        logoUrl: true,
+        primaryColor: true,
+        secondaryColor: true,
         createdAt: true,
       },
     });
@@ -59,6 +83,30 @@ export class UsersService {
       name: string;
       company: string;
       isActive: boolean;
+      // Informations vendeur
+      companyAddress: string;
+      companyPostalCode: string;
+      companyCity: string;
+      companyCountry: string;
+      companySiret: string;
+      companySiren: string;
+      companyVatNumber: string;
+      companyNafCode: string;
+      companyLegalForm: string;
+      companyCapital: string;
+      companyRegistrationCity: string;
+      companyRegistrationNumber: string;
+      // Contact
+      phone: string;
+      website: string;
+      // Banque
+      bankName: string;
+      bankIban: string;
+      bankBic: string;
+      // Branding
+      logoUrl: string;
+      primaryColor: string;
+      secondaryColor: string;
     }>,
   ) {
     return this.prisma.user.update({
@@ -71,6 +119,30 @@ export class UsersService {
         company: true,
         role: true,
         isActive: true,
+        // Informations vendeur
+        companyAddress: true,
+        companyPostalCode: true,
+        companyCity: true,
+        companyCountry: true,
+        companySiret: true,
+        companySiren: true,
+        companyVatNumber: true,
+        companyNafCode: true,
+        companyLegalForm: true,
+        companyCapital: true,
+        companyRegistrationCity: true,
+        companyRegistrationNumber: true,
+        // Contact
+        phone: true,
+        website: true,
+        // Banque
+        bankName: true,
+        bankIban: true,
+        bankBic: true,
+        // Branding
+        logoUrl: true,
+        primaryColor: true,
+        secondaryColor: true,
         updatedAt: true,
       },
     });

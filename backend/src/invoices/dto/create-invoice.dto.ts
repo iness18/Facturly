@@ -1,33 +1,49 @@
 import {
   IsString,
   IsNumber,
-  IsEmail,
   IsOptional,
   IsDateString,
   Min,
   MaxLength,
+  IsEnum,
 } from 'class-validator';
+import { InvoiceStatus } from '@prisma/client';
 
 export class CreateInvoiceDto {
   @IsString()
   @MaxLength(100)
   invoiceNumber: string;
 
+  @IsOptional()
   @IsString()
   @MaxLength(200)
-  clientName: string;
-
-  @IsEmail()
-  clientEmail?: string;
+  title?: string;
 
   @IsOptional()
   @IsString()
-  @MaxLength(500)
-  clientAddress?: string;
+  @MaxLength(1000)
+  description?: string;
 
   @IsNumber()
   @Min(0)
   amount: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  taxAmount?: number;
+
+  @IsNumber()
+  @Min(0)
+  totalAmount: number;
+
+  @IsOptional()
+  @IsEnum(InvoiceStatus)
+  status?: InvoiceStatus;
+
+  @IsOptional()
+  @IsDateString()
+  issueDate?: string;
 
   @IsOptional()
   @IsDateString()
@@ -36,10 +52,11 @@ export class CreateInvoiceDto {
   @IsOptional()
   @IsString()
   @MaxLength(1000)
-  description?: string;
+  notes?: string;
 
-  @IsOptional()
   @IsString()
-  @MaxLength(50)
-  status?: string;
+  clientId: string;
+
+  @IsString()
+  userId: string;
 }

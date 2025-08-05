@@ -258,9 +258,14 @@ class HybridStorageService {
   }
 
   private convertLocalInvoiceToApi(localInvoice: HybridInvoice): any {
+    // Ne pas envoyer de facture si les IDs requis sont manquants
+    if (!localInvoice.fullData?.clientId || !localInvoice.fullData?.userId) {
+      throw new Error("ClientId et UserId sont requis pour créer une facture");
+    }
+
     return {
       invoiceNumber: localInvoice.number,
-      title: localInvoice.fullData?.title || "",
+      title: localInvoice.fullData?.title || "Facture",
       description: localInvoice.fullData?.description || "",
       amount: parseFloat(localInvoice.amount),
       taxAmount: localInvoice.fullData?.taxAmount || 0,
@@ -269,8 +274,8 @@ class HybridStorageService {
       issueDate: localInvoice.date,
       dueDate: localInvoice.fullData?.dueDate || localInvoice.date,
       notes: localInvoice.fullData?.notes || "",
-      clientId: localInvoice.fullData?.clientId || "temp-client-id",
-      items: localInvoice.fullData?.items || [],
+      clientId: localInvoice.fullData.clientId,
+      userId: localInvoice.fullData.userId,
     };
   }
 

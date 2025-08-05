@@ -12,11 +12,45 @@ export class InvoicesService {
       const invoice = await this.prisma.invoice.create({
         data: {
           invoiceNumber: createInvoiceDto.invoiceNumber,
+          title: createInvoiceDto.title || 'Facture',
+          description: createInvoiceDto.description,
           amount: createInvoiceDto.amount,
-          totalAmount: createInvoiceDto.amount, // Pour l'instant, total = amount
-          dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 jours
-          userId: 'temp-user-id', // TODO: Récupérer depuis l'auth
-          clientId: 'temp-client-id', // TODO: Récupérer depuis le DTO
+          taxAmount: createInvoiceDto.taxAmount || 0,
+          totalAmount: createInvoiceDto.totalAmount,
+          status: createInvoiceDto.status || 'DRAFT',
+          issueDate: createInvoiceDto.issueDate
+            ? new Date(createInvoiceDto.issueDate)
+            : new Date(),
+          dueDate: createInvoiceDto.dueDate
+            ? new Date(createInvoiceDto.dueDate)
+            : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          notes: createInvoiceDto.notes,
+          userId: createInvoiceDto.userId,
+          clientId: createInvoiceDto.clientId,
+        },
+        include: {
+          client: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              phone: true,
+              address: true,
+              city: true,
+              postalCode: true,
+              country: true,
+              siret: true,
+            },
+          },
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              company: true,
+            },
+          },
+          items: true,
         },
       });
       return invoice;
@@ -28,8 +62,58 @@ export class InvoicesService {
     }
   }
 
-  async findAll() {
+  async findAll(userId?: string) {
+    const where = userId ? { userId } : {};
     return this.prisma.invoice.findMany({
+      where,
+      include: {
+        client: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+            address: true,
+            city: true,
+            postalCode: true,
+            country: true,
+            siret: true,
+          },
+        },
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            company: true,
+            // Informations vendeur
+            companyAddress: true,
+            companyPostalCode: true,
+            companyCity: true,
+            companyCountry: true,
+            companySiret: true,
+            companySiren: true,
+            companyVatNumber: true,
+            companyNafCode: true,
+            companyLegalForm: true,
+            companyCapital: true,
+            companyRegistrationCity: true,
+            companyRegistrationNumber: true,
+            // Contact
+            phone: true,
+            website: true,
+            // Banque
+            bankName: true,
+            bankIban: true,
+            bankBic: true,
+            // Branding
+            logoUrl: true,
+            primaryColor: true,
+            secondaryColor: true,
+          },
+        },
+        items: true,
+      },
       orderBy: {
         createdAt: 'desc',
       },
@@ -39,6 +123,54 @@ export class InvoicesService {
   async findOne(id: string) {
     const invoice = await this.prisma.invoice.findUnique({
       where: { id },
+      include: {
+        client: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+            address: true,
+            city: true,
+            postalCode: true,
+            country: true,
+            siret: true,
+          },
+        },
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            company: true,
+            // Informations vendeur
+            companyAddress: true,
+            companyPostalCode: true,
+            companyCity: true,
+            companyCountry: true,
+            companySiret: true,
+            companySiren: true,
+            companyVatNumber: true,
+            companyNafCode: true,
+            companyLegalForm: true,
+            companyCapital: true,
+            companyRegistrationCity: true,
+            companyRegistrationNumber: true,
+            // Contact
+            phone: true,
+            website: true,
+            // Banque
+            bankName: true,
+            bankIban: true,
+            bankBic: true,
+            // Branding
+            logoUrl: true,
+            primaryColor: true,
+            secondaryColor: true,
+          },
+        },
+        items: true,
+      },
     });
 
     if (!invoice) {
@@ -80,25 +212,36 @@ export class InvoicesService {
     });
   }
 
-  async getStats() {
-    const [total, count, pending] = await Promise.all([
+  async getStats(userId?: string) {
+    const where = userId ? { userId } : {};
+
+    const [total, count, pending, paid] = await Promise.all([
       this.prisma.invoice.aggregate({
+        where,
         _sum: {
-          amount: true,
+          totalAmount: true,
         },
       }),
-      this.prisma.invoice.count(),
+      this.prisma.invoice.count({ where }),
       this.prisma.invoice.count({
         where: {
-          // Ajouter une condition pour les factures en attente si nécessaire
+          ...where,
+          status: { in: ['DRAFT', 'SENT', 'OVERDUE'] },
+        },
+      }),
+      this.prisma.invoice.count({
+        where: {
+          ...where,
+          status: 'PAID',
         },
       }),
     ]);
 
     return {
-      totalAmount: total._sum.amount || 0,
+      totalAmount: total._sum.totalAmount || 0,
       totalCount: count,
       pendingCount: pending,
+      paidCount: paid,
     };
   }
 }

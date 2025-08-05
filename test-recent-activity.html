@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test Activité Récente - Facturly</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        background: #0a0a0f;
+        color: white;
+      }
+      .test-section {
+        background: rgba(255, 255, 255, 0.05);
+        padding: 20px;
+        margin: 20px 0;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      button {
+        background: linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        margin: 5px;
+      }
+      button:hover {
+        opacity: 0.8;
+      }
+      .results {
+        background: rgba(0, 0, 0, 0.3);
+        padding: 15px;
+        border-radius: 5px;
+        margin: 10px 0;
+        white-space: pre-wrap;
+        font-family: monospace;
+      }
+      .success {
+        color: #10b981;
+      }
+      .error {
+        color: #ef4444;
+      }
+      .info {
+        color: #3b82f6;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>🧪 Test Activité Récente - Facturly</h1>
+
+    <div class="test-section">
+      <h2>📋 Tests de l'activité récente</h2>
+      <p>
+        Ce script teste les améliorations apportées au système d'activité
+        récente.
+      </p>
+
+      <button onclick="testNewInvoice()">🆕 Créer nouvelle facture</button>
+      <button onclick="testUpdateInvoice()">
+        ✏️ Modifier facture existante
+      </button>
+      <button onclick="testDuplicateTask()">🔄 Test doublons</button>
+      <button onclick="testStatusUpdate()">📊 Changer statut</button>
+      <button onclick="showRecentTasks()">👀 Voir activité récente</button>
+      <button onclick="clearData()">🗑️ Vider données</button>
+    </div>
+
+    <div class="test-section">
+      <h3>📊 Résultats des tests</h3>
+      <div id="results" class="results">
+        Cliquez sur un bouton pour commencer les tests...
+      </div>
+    </div>
+
+    <script>
+      // Simulation du service de stockage
+      const INVOICES_KEY = "facturly_invoices";
+      const RECENT_TASKS_KEY = "facturly_recent_tasks";
+
+      function log(message, type = "info") {
+        const results = document.getElementById("results");
+        const timestamp = new Date().toLocaleTimeString();
+        const className =
+          type === "success" ? "success" : type === "error" ? "error" : "info";
+        results.innerHTML += `<span class="${className}">[${timestamp}] ${message}</span>\n`;
+        results.scrollTop = results.scrollHeight;
+      }
+
+      function getInvoices() {
+        try {
+          const stored = localStorage.getItem(INVOICES_KEY);
+          return stored ? JSON.parse(stored) : [];
+        } catch (error) {
+          log(`Erreur récupération factures: ${error.message}`, "error");
+          return [];
+        }
+      }
+
+      function getRecentTasks() {
+        try {
+          const stored = localStorage.getItem(RECENT_TASKS_KEY);
+          return stored ? JSON.parse(stored) : [];
+        } catch (error) {
+          log(`Erreur récupération tâches: ${error.message}`, "error");
+          return [];
+        }
+      }
+
+      function addRecentTask(task) {
+        try {
+          const tasks = getRecentTasks();
+
+          // Vérifier doublons
+          const existingTaskIndex = tasks.findIndex(
+            (existingTask) =>
+              existingTask.type === task.type &&
+              existingTask.description === task.description
+          );
+
+          if (existingTaskIndex >= 0) {
+            log(`🔄 Doublon détecté et supprimé: ${task.description}`, "info");
+            tasks.splice(existingTaskIndex, 1);
+          }
+
+          tasks.unshift(task);
+          const limitedTasks = tasks.slice(0, 20);
+          localStorage.setItem(RECENT_TASKS_KEY, JSON.stringify(limitedTasks));
+
+          log(`✅ Tâche ajoutée: ${task.title}`, "success");
+        } catch (error) {
+          log(`Erreur ajout tâche: ${error.message}`, "error");
+        }
+      }
+
+      function saveInvoice(invoice) {
+        try {
+          const invoices = getInvoices();
+          const existingIndex = invoices.findIndex(
+            (inv) => inv.id === invoice.id
+          );
+          const isNewInvoice = existingIndex < 0;
+
+          if (existingIndex >= 0) {
+            invoices[existingIndex] = invoice;
+            log(`📝 Facture mise à jour: ${invoice.number}`, "info");
+          } else {
+            invoices.unshift(invoice);
+            log(`🆕 Nouvelle facture créée: ${invoice.number}`, "success");
+          }
+
+          localStorage.setItem(INVOICES_KEY, JSON.stringify(invoices));
+
+          // Ajouter tâche récente SEULEMENT pour nouvelles factures
+          if (isNewInvoice) {
+            addRecentTask({
+              id: `task_${Date.now()}`,
+              type: "invoice_created",
+              title: "Nouvelle facture créée",
+              description: `Facture ${invoice.number} pour ${invoice.client}`,
+              date: new Date().toISOString(),
+              icon: "📄",
+            });
+          } else {
+            log(
+              `ℹ️ Pas de nouvelle tâche pour modification de facture existante`,
+              "info"
+            );
+          }
+        } catch (error) {
+          log(`Erreur sauvegarde facture: ${error.message}`, "error");
+        }
+      }
+
+      function testNewInvoice() {
+        log("🧪 Test: Création nouvelle facture", "info");
+        const invoice = {
+          id: `invoice_${Date.now()}`,
+          number: `FACT-2025-${Math.floor(Math.random() * 1000)}`,
+          client: "Client Test",
+          date: new Date().toISOString().split("T")[0],
+          amount: "100.00",
+          status: "draft",
+          createdAt: new Date().toISOString(),
+          fullData: {},
+        };
+        saveInvoice(invoice);
+      }
+
+      function testUpdateInvoice() {
+        log("🧪 Test: Modification facture existante", "info");
+        const invoices = getInvoices();
+        if (invoices.length === 0) {
+          log(
+            "❌ Aucune facture à modifier. Créez d'abord une facture.",
+            "error"
+          );
+          return;
+        }
+
+        const invoice = { ...invoices[0] };
+        invoice.amount = (parseFloat(invoice.amount) + 50).toFixed(2);
+        saveInvoice(invoice);
+      }
+
+      function testDuplicateTask() {
+        log("🧪 Test: Prévention des doublons", "info");
+        const task = {
+          id: `task_${Date.now()}`,
+          type: "invoice_created",
+          title: "Test doublon",
+          description: "Facture TEST-123 pour Client Doublon",
+          date: new Date().toISOString(),
+          icon: "📄",
+        };
+
+        log("Ajout première fois...", "info");
+        addRecentTask(task);
+
+        setTimeout(() => {
+          log("Ajout deuxième fois (devrait remplacer)...", "info");
+          addRecentTask({ ...task, id: `task_${Date.now()}` });
+        }, 1000);
+      }
+
+      function testStatusUpdate() {
+        log("🧪 Test: Changement de statut", "info");
+        const invoices = getInvoices();
+        if (invoices.length === 0) {
+          log(
+            "❌ Aucune facture pour changer le statut. Créez d'abord une facture.",
+            "error"
+          );
+          return;
+        }
+
+        const invoice = invoices[0];
+        if (invoice.status === "draft") {
+          addRecentTask({
+            id: `task_${Date.now()}`,
+            type: "invoice_sent",
+            title: "Facture envoyée",
+            description: `Facture ${invoice.number} envoyée à ${invoice.client}`,
+            date: new Date().toISOString(),
+            icon: "📤",
+          });
+        } else if (invoice.status === "sent") {
+          addRecentTask({
+            id: `task_${Date.now()}`,
+            type: "payment_received",
+            title: "Paiement reçu",
+            description: `Facture ${invoice.number} payée`,
+            date: new Date().toISOString(),
+            icon: "💰",
+          });
+        }
+      }
+
+      function showRecentTasks() {
+        log("📋 Activité récente actuelle:", "info");
+        const tasks = getRecentTasks();
+        if (tasks.length === 0) {
+          log("Aucune activité récente", "info");
+          return;
+        }
+
+        tasks.forEach((task, index) => {
+          const date = new Date(task.date).toLocaleString();
+          log(
+            `${index + 1}. ${task.icon} ${task.title} - ${
+              task.description
+            } (${date})`,
+            "success"
+          );
+        });
+        log(`Total: ${tasks.length} tâches`, "info");
+      }
+
+      function clearData() {
+        localStorage.removeItem(INVOICES_KEY);
+        localStorage.removeItem(RECENT_TASKS_KEY);
+        log("🗑️ Toutes les données ont été supprimées", "success");
+      }
+
+      // Initialisation
+      log("🚀 Script de test initialisé. Prêt pour les tests!", "success");
+    </script>
+  </body>
+</html>

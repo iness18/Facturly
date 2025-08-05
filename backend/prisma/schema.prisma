@@ -40,6 +40,34 @@ model User {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   
+  // Informations vendeur pour les factures
+  companyAddress     String?
+  companyPostalCode  String?
+  companyCity        String?
+  companyCountry     String?   @default("France")
+  companySiret       String?
+  companySiren       String?
+  companyVatNumber   String?
+  companyNafCode     String?
+  companyLegalForm   String?
+  companyCapital     String?
+  companyRegistrationCity String?
+  companyRegistrationNumber String?
+  
+  // Contact vendeur
+  phone              String?
+  website            String?
+  
+  // Informations bancaires
+  bankName           String?
+  bankIban           String?
+  bankBic            String?
+  
+  // Branding
+  logoUrl            String?
+  primaryColor       String?   @default("#8b5cf6")
+  secondaryColor     String?   @default("#ec4899")
+  
   // Relations existantes
   invoices  Invoice[]
   clients   Client[]

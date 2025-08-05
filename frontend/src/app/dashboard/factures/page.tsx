@@ -10,6 +10,7 @@ import {
 } from "@/utils/storage";
 import StatusSelect from "@/components/StatusSelect";
 import InvoiceDetailsModalComponent from "@/components/InvoiceDetailsModal";
+import { DownloadService } from "@/utils/downloadService";
 
 // Composant Card réutilisable
 const Card = ({
@@ -312,12 +313,16 @@ const InvoiceRow = ({
   onEdit,
   onDuplicate,
   onDelete,
+  onDownloadPDF,
+  onDownloadCSV,
 }: {
   invoice: any;
   onViewDetails: (invoice: any) => void;
   onEdit: (invoice: any) => void;
   onDuplicate: (invoice: any) => void;
   onDelete: (invoice: any) => void;
+  onDownloadPDF: (invoice: any) => void;
+  onDownloadCSV: (invoice: any) => void;
 }) => {
   const [showActionsMenu, setShowActionsMenu] = useState(false);
 
@@ -560,6 +565,79 @@ const InvoiceRow = ({
               >
                 📋 Dupliquer
               </button>
+              <div
+                style={{
+                  width: "100%",
+                  background: "transparent",
+                  border: "none",
+                  color: "#ffffff",
+                  padding: "8px 12px",
+                  borderRadius: "6px",
+                  fontSize: "14px",
+                  cursor: "pointer",
+                  textAlign: "left",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "6px",
+                  transition: "all 0.2s ease",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = "rgba(255, 255, 255, 0.1)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = "transparent";
+                }}
+              >
+                <span
+                  style={{ display: "flex", alignItems: "center", gap: "8px" }}
+                >
+                  📥 Télécharger
+                </span>
+                <div
+                  style={{ display: "flex", gap: "6px", paddingLeft: "24px" }}
+                >
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDownloadPDF(invoice);
+                      setShowActionsMenu(false);
+                    }}
+                    style={{
+                      background:
+                        "linear-gradient(135deg, #10b981 0%, #059669 100%)",
+                      border: "none",
+                      color: "#ffffff",
+                      padding: "4px 12px",
+                      borderRadius: "4px",
+                      fontSize: "12px",
+                      cursor: "pointer",
+                      fontWeight: "500",
+                    }}
+                  >
+                    PDF
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDownloadCSV(invoice);
+                      setShowActionsMenu(false);
+                    }}
+                    style={{
+                      background:
+                        "linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)",
+                      border: "none",
+                      color: "#ffffff",
+                      padding: "4px 12px",
+                      borderRadius: "4px",
+                      fontSize: "12px",
+                      cursor: "pointer",
+                      fontWeight: "500",
+                    }}
+                  >
+                    CSV
+                  </button>
+                </div>
+              </div>
               <button
                 onClick={() => {
                   onDelete(invoice);
@@ -605,6 +683,8 @@ const InvoiceList = ({
   onEdit,
   onDuplicate,
   onDelete,
+  onDownloadPDF,
+  onDownloadCSV,
 }: {
   invoices: any[];
   onCreateClick: () => void;
@@ -612,6 +692,8 @@ const InvoiceList = ({
   onEdit: (invoice: any) => void;
   onDuplicate: (invoice: any) => void;
   onDelete: (invoice: any) => void;
+  onDownloadPDF: (invoice: any) => void;
+  onDownloadCSV: (invoice: any) => void;
 }) => {
   if (invoices.length === 0) {
     return (
@@ -755,6 +837,8 @@ const InvoiceList = ({
             onEdit={onEdit}
             onDuplicate={onDuplicate}
             onDelete={onDelete}
+            onDownloadPDF={onDownloadPDF}
+            onDownloadCSV={onDownloadCSV}
           />
         ))}
       </div>
@@ -844,6 +928,33 @@ export default function FacturesPage() {
 
       setIsDeleteModalOpen(false);
       setSelectedInvoice(null);
+    }
+  };
+
+  // Fonctions de téléchargement
+  const handleDownloadPDF = async (invoice: Invoice) => {
+    try {
+      await DownloadService.downloadPDF(invoice.id);
+      DownloadService.showSuccessNotification(
+        `PDF de la facture ${invoice.number} téléchargé avec succès`
+      );
+    } catch (error) {
+      DownloadService.showErrorNotification(
+        `Erreur lors du téléchargement du PDF de la facture ${invoice.number}`
+      );
+    }
+  };
+
+  const handleDownloadCSV = async (invoice: Invoice) => {
+    try {
+      await DownloadService.downloadCSV(invoice.id);
+      DownloadService.showSuccessNotification(
+        `CSV de la facture ${invoice.number} téléchargé avec succès`
+      );
+    } catch (error) {
+      DownloadService.showErrorNotification(
+        `Erreur lors du téléchargement du CSV de la facture ${invoice.number}`
+      );
     }
   };
 
@@ -1124,6 +1235,8 @@ export default function FacturesPage() {
           onEdit={handleEdit}
           onDuplicate={handleDuplicate}
           onDelete={handleDelete}
+          onDownloadPDF={handleDownloadPDF}
+          onDownloadCSV={handleDownloadCSV}
         />
       </main>
 
