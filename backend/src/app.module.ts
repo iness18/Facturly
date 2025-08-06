@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { DatabaseModule } from './database/database.module';
+import { MongodbModule } from './database/mongodb.module';
 import { InvoicesModule } from './invoices/invoices.module';
 import { UsersModule } from './users/users.module';
 import { AdminModule } from './admin/admin.module';
@@ -15,12 +15,13 @@ import { AuthModule } from './auth/auth.module';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    DatabaseModule,
+    MongodbModule, // Nouveau module MongoDB
+    // DatabaseModule, // Désactivé temporairement pour les tests MongoDB
     AuthModule,
-    TestModule,
+    // TestModule, // Désactivé temporairement - utilise encore Prisma
     InvoicesModule,
     UsersModule,
-    AdminModule,
+    // AdminModule, // Désactivé temporairement - utilise encore Prisma
     ClientsModule,
   ],
   controllers: [AppController],

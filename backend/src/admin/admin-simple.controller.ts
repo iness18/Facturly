@@ -9,34 +9,19 @@ import {
   HttpStatus,
   HttpCode,
 } from '@nestjs/common';
-import { AdminDashboardSimpleService } from './admin-dashboard-simple.service';
-import {
-  AdminUsersSimpleService,
-  UserSearchFilters,
-  UserListOptions,
-} from './admin-users-simple.service';
-import {
-  AdminPacksSimpleService,
-  PackCreateData,
-  PackUpdateData,
-} from './admin-packs-simple.service';
 import { AdminMockService } from './admin-mock.service';
 
 @Controller('admin')
 export class AdminSimpleController {
-  constructor(
-    private readonly dashboardService: AdminDashboardSimpleService,
-    private readonly usersService: AdminUsersSimpleService,
-    private readonly packsService: AdminPacksSimpleService,
-    private readonly mockService: AdminMockService,
-  ) {}
+  constructor(private readonly mockService: AdminMockService) {}
 
   // 📊 1. TABLEAU DE BORD ADMIN
 
   @Get('dashboard')
   async getDashboard() {
-    // Utiliser directement le service mock pour éviter les erreurs Prisma
-    console.log('📊 Utilisation des données de test pour le dashboard');
+    console.log(
+      '📊 Utilisation des données de test (services Prisma supprimés)',
+    );
     return this.mockService.getDashboardStats();
   }
 
@@ -44,7 +29,11 @@ export class AdminSimpleController {
   async getDashboardCharts(
     @Query('period') period?: 'week' | 'month' | 'year',
   ) {
-    return await this.dashboardService.getChartData(period);
+    return {
+      message: 'Graphiques temporairement indisponibles (migration MongoDB)',
+      period: period || 'month',
+      data: [],
+    };
   }
 
   // 👥 2. GESTION DES UTILISATEURS
@@ -59,35 +48,30 @@ export class AdminSimpleController {
     @Query('sortBy') sortBy?: string,
     @Query('sortOrder') sortOrder?: 'asc' | 'desc',
   ) {
-    try {
-      const filters: UserSearchFilters = {
-        search,
-        role,
-        isActive: isActive ? isActive === 'true' : undefined,
-      };
-
-      const options: UserListOptions = {
-        page: page ? parseInt(page) : undefined,
-        limit: limit ? parseInt(limit) : undefined,
-        sortBy: sortBy as any,
-        sortOrder,
-      };
-
-      return await this.usersService.searchUsers(filters, options);
-    } catch (error) {
-      console.log('👥 Utilisation des données de test pour les utilisateurs');
-      return this.mockService.getUsers();
-    }
+    console.log(
+      '👥 Utilisation des données de test (services Prisma supprimés)',
+    );
+    return this.mockService.getUsers();
   }
 
   @Get('users/stats')
   async getUsersGlobalStats() {
-    return await this.usersService.getUserStats();
+    return {
+      message:
+        'Statistiques utilisateurs temporairement indisponibles (migration MongoDB)',
+      totalUsers: 0,
+      activeUsers: 0,
+      newUsersThisMonth: 0,
+    };
   }
 
   @Get('users/:id')
   async getUserDetails(@Param('id') userId: string) {
-    return await this.usersService.getUserDetails(userId);
+    return {
+      message:
+        'Détails utilisateur temporairement indisponibles (migration MongoDB)',
+      userId: userId,
+    };
   }
 
   @Get('users/:id/activity')
@@ -95,8 +79,12 @@ export class AdminSimpleController {
     @Param('id') userId: string,
     @Query('days') days?: string,
   ) {
-    const daysNumber = days ? parseInt(days) : 30;
-    return await this.usersService.getUserActivity(userId, daysNumber);
+    return {
+      message:
+        'Activité utilisateur temporairement indisponible (migration MongoDB)',
+      userId: userId,
+      days: days || '30',
+    };
   }
 
   @Patch('users/:id/deactivate')
@@ -105,7 +93,9 @@ export class AdminSimpleController {
     @Param('id') userId: string,
     @Body('reason') reason?: string,
   ) {
-    return await this.usersService.deactivateUser(userId, reason);
+    return {
+      message: 'Fonctionnalité temporairement indisponible (migration MongoDB)',
+    };
   }
 
   @Post('users/:id/reset-password')
@@ -114,7 +104,9 @@ export class AdminSimpleController {
     @Param('id') userId: string,
     @Body('newPassword') newPassword?: string,
   ) {
-    return await this.usersService.resetUserPassword(userId, newPassword);
+    return {
+      message: 'Fonctionnalité temporairement indisponible (migration MongoDB)',
+    };
   }
 
   // 🚀 ENDPOINTS DE TEST ET DOCUMENTATION
@@ -183,52 +175,77 @@ export class AdminSimpleController {
     };
   }
 
+  @Get('test/database')
+  async testDatabase() {
+    return {
+      message: 'Test de connexion MongoDB',
+      timestamp: new Date().toISOString(),
+      status: 'mock_data',
+      note: 'Services Prisma supprimés - utilisation des données de test',
+      data: this.mockService.getDashboardStats(),
+    };
+  }
+
   // 📋 ENDPOINTS DE COMPATIBILITÉ (pour éviter les erreurs 404)
 
   // 💼 3. GESTION DES PACKS/OFFRES
 
   @Get('packs')
   async getPacks() {
-    try {
-      return await this.packsService.getAllPacks();
-    } catch (error) {
-      console.log('💼 Utilisation des données de test pour les packs');
-      return this.mockService.getPacks();
-    }
+    console.log(
+      '💼 Utilisation des données de test (services Prisma supprimés)',
+    );
+    return this.mockService.getPacks();
   }
 
   @Get('packs/stats')
   async getPacksStats() {
-    return await this.packsService.getPacksStats();
+    return {
+      message:
+        'Statistiques packs temporairement indisponibles (migration MongoDB)',
+      totalPacks: 0,
+      activePacks: 0,
+    };
   }
 
   @Get('packs/:id')
   async getPackById(@Param('id') id: string) {
-    return await this.packsService.getPackById(id);
+    return {
+      message: 'Détails pack temporairement indisponibles (migration MongoDB)',
+      packId: id,
+    };
   }
 
   @Post('packs')
   @HttpCode(HttpStatus.CREATED)
-  async createPack(@Body() packData: PackCreateData) {
-    return await this.packsService.createPack(packData);
+  async createPack(@Body() packData: any) {
+    return {
+      message: 'Fonctionnalité temporairement indisponible (migration MongoDB)',
+    };
   }
 
   @Patch('packs/:id')
   @HttpCode(HttpStatus.OK)
-  async updatePack(@Param('id') id: string, @Body() packData: PackUpdateData) {
-    return await this.packsService.updatePack(id, packData);
+  async updatePack(@Param('id') id: string, @Body() packData: any) {
+    return {
+      message: 'Fonctionnalité temporairement indisponible (migration MongoDB)',
+    };
   }
 
   @Patch('packs/:id/toggle')
   @HttpCode(HttpStatus.OK)
   async togglePackStatus(@Param('id') id: string) {
-    return await this.packsService.togglePackStatus(id);
+    return {
+      message: 'Fonctionnalité temporairement indisponible (migration MongoDB)',
+    };
   }
 
   @Post('packs/:id/delete')
   @HttpCode(HttpStatus.OK)
   async deletePack(@Param('id') id: string) {
-    return await this.packsService.deletePack(id);
+    return {
+      message: 'Fonctionnalité temporairement indisponible (migration MongoDB)',
+    };
   }
 
   @Get('payments')

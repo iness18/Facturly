@@ -3,8 +3,8 @@ import {
   ConflictException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { PrismaService } from '../database/prisma.service';
-import { UsersService } from '../users/users.service';
+import { JwtService } from '@nestjs/jwt';
+import { UsersMongoService } from '../users/users-mongo.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import * as bcrypt from 'bcrypt';
@@ -12,8 +12,8 @@ import * as bcrypt from 'bcrypt';
 @Injectable()
 export class AuthService {
   constructor(
-    private prisma: PrismaService,
-    private usersService: UsersService,
+    private usersService: UsersMongoService,
+    private jwtService: JwtService,
   ) {}
 
   // Inscription d'un nouvel utilisateur
@@ -41,10 +41,19 @@ export class AuthService {
         company,
       });
 
+      if (!user) {
+        throw new Error("Erreur lors de la création de l'utilisateur");
+      }
+
+      // Générer un token JWT
+      const payload = { email: user.email, sub: user.id, role: user.role };
+      const token = this.jwtService.sign(payload);
+
       // Retourner l'utilisateur sans le mot de passe
       return {
         success: true,
         user,
+        token,
         message: 'Inscription réussie',
       };
     } catch (error) {
@@ -93,12 +102,17 @@ export class AuthService {
         throw new UnauthorizedException('Compte désactivé');
       }
 
+      // Générer un token JWT
+      const payload = { email: user.email, sub: user.id, role: user.role };
+      const token = this.jwtService.sign(payload);
+
       // Retourner l'utilisateur sans le mot de passe
       const { password: _, ...userWithoutPassword } = user;
 
       return {
         success: true,
         user: userWithoutPassword,
+        token,
         message: 'Connexion réussie',
       };
     } catch (error) {
@@ -108,6 +122,13 @@ export class AuthService {
 
         if (email === 'admin@facturly.com' && password === 'Admin123!') {
           console.log('🔧 Mode test: Connexion admin simulée');
+          const payload = {
+            email: 'admin@facturly.com',
+            sub: 'admin-test',
+            role: 'ADMIN',
+          };
+          const token = this.jwtService.sign(payload);
+
           return {
             success: true,
             user: {
@@ -118,6 +139,7 @@ export class AuthService {
               role: 'ADMIN' as const,
               isActive: true,
             },
+            token,
             message: 'Connexion réussie (mode test)',
             mode: 'test',
           };
@@ -125,6 +147,13 @@ export class AuthService {
 
         if (email === 'user@test.com' && password === 'Test123!') {
           console.log('🔧 Mode test: Connexion utilisateur simulée');
+          const payload = {
+            email: 'user@test.com',
+            sub: 'user-test',
+            role: 'USER',
+          };
+          const token = this.jwtService.sign(payload);
+
           return {
             success: true,
             user: {
@@ -135,6 +164,7 @@ export class AuthService {
               role: 'USER' as const,
               isActive: true,
             },
+            token,
             message: 'Connexion réussie (mode test)',
             mode: 'test',
           };
@@ -148,6 +178,13 @@ export class AuthService {
 
       if (email === 'admin@facturly.com' && password === 'Admin123!') {
         console.log('🔧 Mode test: Connexion admin simulée (DB error)');
+        const payload = {
+          email: 'admin@facturly.com',
+          sub: 'admin-test',
+          role: 'ADMIN',
+        };
+        const token = this.jwtService.sign(payload);
+
         return {
           success: true,
           user: {
@@ -158,6 +195,7 @@ export class AuthService {
             role: 'ADMIN' as const,
             isActive: true,
           },
+          token,
           message: 'Connexion réussie (mode test)',
           mode: 'test',
         };

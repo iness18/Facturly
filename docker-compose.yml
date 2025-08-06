@@ -8,14 +8,14 @@ services:
     ports:
       - "3001:3001"
     depends_on:
-      db:
+      mongodb:
         condition: service_healthy
     environment:
-      - DATABASE_URL=${DATABASE_URL}
+      - MONGODB_URI=${MONGODB_URI}
     volumes:
       - ./backend:/app
       - /app/node_modules
-    command: sh -c "npx prisma migrate deploy && npx prisma generate && npm run start:dev"
+    command: npm run start:dev
     networks:
       - facturly_net
 
@@ -38,24 +38,43 @@ services:
     networks:
       - facturly_net
 
-  # Service Base de données (PostgreSQL)
-  db:
-    image: postgres:15-alpine
-    container_name: facturly_db
+  # Service Base de données MongoDB
+  mongodb:
+    image: mongo:7.0
+    container_name: facturly_mongodb
     restart: always
     environment:
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_DB=${POSTGRES_DB}
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}
+      - MONGO_INITDB_DATABASE=${MONGO_DATABASE}
     ports:
-      - "5432:5432"
+      - "27017:27017"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - mongodata:/data/db
+      - ./backend/scripts/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - facturly_net
+
+  # Interface d'administration MongoDB (Mongo Express)
+  mongo-express:
+    image: mongo-express:latest
+    container_name: facturly_mongo_express
+    restart: always
+    environment:
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=${MONGO_USERNAME}
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=${MONGO_PASSWORD}
+      - ME_CONFIG_MONGODB_URL=mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@mongodb:27017/
+      - ME_CONFIG_BASICAUTH_USERNAME=admin
+      - ME_CONFIG_BASICAUTH_PASSWORD=admin123
+    ports:
+      - "8081:8081"
+    depends_on:
+      - mongodb
     networks:
       - facturly_net
 
@@ -64,4 +83,4 @@ networks:
     driver: bridge
 
 volumes:
-  pgdata:
+  mongodata:

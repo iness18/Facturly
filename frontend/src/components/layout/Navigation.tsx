@@ -106,23 +106,6 @@ export default function Navigation({ currentPage = "" }: NavigationProps) {
           }}
         >
           <Link
-            href="/admin/login"
-            style={{
-              background: "transparent",
-              border: "1px solid rgba(139, 92, 246, 0.3)",
-              color: "#a78bfa",
-              cursor: "pointer",
-              textDecoration: "none",
-              padding: "6px 12px",
-              borderRadius: "6px",
-              fontSize: "12px",
-              display: "inline-block",
-            }}
-            title="Administration"
-          >
-            🔐
-          </Link>
-          <Link
             href="/connexion"
             style={{
               background: "transparent",
@@ -241,24 +224,6 @@ export default function Navigation({ currentPage = "" }: NavigationProps) {
                 onClick={() => setIsMenuOpen(false)}
               >
                 S'inscrire
-              </Link>
-              <Link
-                href="/admin/login"
-                style={{
-                  background: "transparent",
-                  border: "1px solid rgba(139, 92, 246, 0.3)",
-                  color: "#a78bfa",
-                  padding: "8px",
-                  borderRadius: "6px",
-                  textDecoration: "none",
-                  textAlign: "center",
-                  display: "block",
-                  fontSize: "12px",
-                  marginTop: "8px",
-                }}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                🔐 Administration
               </Link>
             </div>
           </div>

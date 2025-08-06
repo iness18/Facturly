@@ -5,19 +5,20 @@
 ### ✅ Complété (Fondations)
 
 - **Infrastructure Docker** - Environnement de développement fonctionnel
-- **Base de données PostgreSQL** - Configurée avec health checks
+- **Base de données MongoDB** - Configurée avec health checks
 - **Frontend Next.js** - Structure moderne avec App Router
 - **UI Components** - shadcn/ui intégré avec Tailwind CSS
 - **Landing page** - Interface attractive avec animations
-- **Schéma de données** - Modèle Invoice de base avec Prisma
+- **Schémas de données** - Modèles complets avec Mongoose
 - **Configuration TypeScript** - Setup strict pour frontend et backend
+- **Migration PostgreSQL → MongoDB** - Complétée avec succès
 
-### 🚧 En cours (Backend Core)
+### ✅ Complété (Backend Core)
 
-- **Intégration Prisma** - Service à créer dans NestJS
-- **API REST** - Endpoints CRUD pour les factures
-- **Validation des données** - DTOs avec class-validator
-- **Configuration CORS** - Communication frontend/backend
+- **Intégration MongoDB** - Service MongoDB opérationnel dans NestJS
+- **API REST** - Endpoints CRUD complets pour users, clients, factures
+- **Validation des données** - DTOs avec class-validator implémentés
+- **Configuration CORS** - Communication frontend/backend fonctionnelle
 
 ### ❌ À faire (Fonctionnalités)
 
@@ -48,8 +49,8 @@
 
 ### Critiques (Bloquants)
 
-1. **Backend non fonctionnel** - Prisma non intégré
-2. **CORS manquant** - Frontend isolé du backend
+1. ✅ **Backend fonctionnel** - MongoDB intégré et opérationnel
+2. ✅ **CORS configuré** - Frontend communique avec backend
 3. **Animations CSS** - Classes non définies (animate-blob, etc.)
 4. **Sécurité .env** - Mots de passe en dur
 
@@ -81,10 +82,11 @@
 ### Validées ✅
 
 - **Monorepo** avec séparation frontend/backend
-- **PostgreSQL** pour la robustesse des données financières
+- **MongoDB** pour la flexibilité et performance des données
 - **REST API** plutôt que GraphQL pour la simplicité
 - **shadcn/ui** pour la cohérence des composants
 - **Docker Compose** pour l'environnement de développement
+- **Mongoose ODM** pour l'interaction avec MongoDB
 
 ### En discussion 🤔
 
@@ -104,21 +106,21 @@
 
 ### Cette semaine
 
-1. **Intégrer Prisma dans NestJS**
+1. ✅ **MongoDB intégré dans NestJS**
 
-   - Créer `DatabaseModule`
-   - Service `PrismaService`
-   - Tester la connexion
+   - `MongodbModule` créé et fonctionnel
+   - Services MongoDB opérationnels
+   - Connexion testée et validée
 
-2. **Configurer CORS**
+2. ✅ **CORS configuré**
 
-   - Middleware NestJS
-   - Variables d'environnement
+   - Middleware NestJS activé
+   - Variables d'environnement configurées
 
-3. **Créer API Invoice**
-   - Controller avec CRUD
-   - DTOs de validation
-   - Service métier
+3. ✅ **APIs complètes créées**
+   - Controllers avec CRUD complets
+   - DTOs de validation implémentés
+   - Services métier fonctionnels
 
 ### Semaine prochaine
 
@@ -137,7 +139,7 @@
 
 ### Techniques
 
-- **Complexité Prisma/NestJS** - Courbe d'apprentissage
+- ✅ **Migration MongoDB** - Réussie avec Mongoose
 - **Performance PDF** - Génération côté serveur
 - **Sécurité JWT** - Gestion des tokens
 

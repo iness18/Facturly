@@ -155,7 +155,7 @@ export default function ConnexionPage() {
                 color: "#ffffff",
               }}
             >
-              🔐 Connexion • Sécurisée • Rapide
+              ⚡ Connexion • Sécurisée • Rapide
             </span>
           </div>
 

@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nettoyage du stockage Facturly</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        max-width: 600px;
+        margin: 50px auto;
+        padding: 20px;
+        background: #f5f5f5;
+      }
+      .container {
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+      h1 {
+        color: #2563eb;
+        margin-bottom: 20px;
+      }
+      .warning {
+        background: #fef3c7;
+        border: 1px solid #f59e0b;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 20px 0;
+      }
+      .success {
+        background: #d1fae5;
+        border: 1px solid #10b981;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 20px 0;
+      }
+      button {
+        background: #dc2626;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 16px;
+        margin: 10px 5px;
+      }
+      button:hover {
+        background: #b91c1c;
+      }
+      .safe-btn {
+        background: #2563eb;
+      }
+      .safe-btn:hover {
+        background: #1d4ed8;
+      }
+      .info {
+        background: #e0f2fe;
+        border: 1px solid #0284c7;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 20px 0;
+      }
+      .data-list {
+        background: #f8fafc;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 10px 0;
+        font-family: monospace;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🧹 Nettoyage du stockage Facturly</h1>
+
+      <div class="warning">
+        <strong>⚠️ Attention :</strong> Cette action supprimera TOUTES les
+        données locales de Facturly stockées dans votre navigateur.
+      </div>
+
+      <div class="info">
+        <h3>📊 Données actuellement stockées :</h3>
+        <div id="currentData" class="data-list">Chargement...</div>
+      </div>
+
+      <h3>🎯 Actions disponibles :</h3>
+
+      <button onclick="clearAllData()" class="danger-btn">
+        🗑️ Supprimer TOUTES les données
+      </button>
+
+      <button onclick="clearInvoices()" class="danger-btn">
+        📄 Supprimer seulement les factures
+      </button>
+
+      <button onclick="clearTasks()" class="danger-btn">
+        📋 Supprimer seulement les tâches récentes
+      </button>
+
+      <button onclick="clearClients()" class="danger-btn">
+        👤 Supprimer seulement les clients
+      </button>
+
+      <button onclick="refreshData()" class="safe-btn">
+        🔄 Actualiser l'affichage
+      </button>
+
+      <div id="result"></div>
+
+      <div class="info">
+        <h3>💡 Après le nettoyage :</h3>
+        <ul>
+          <li>Retournez sur <a href="/" target="_blank">Facturly</a></li>
+          <li>Connectez-vous avec votre nouveau compte</li>
+          <li>Vos données seront maintenant isolées par utilisateur</li>
+        </ul>
+      </div>
+    </div>
+
+    <script>
+      // Clés de stockage Facturly
+      const STORAGE_KEYS = {
+        invoices: "facturly_invoices",
+        tasks: "facturly_recent_tasks",
+        clients: "facturly_clients",
+      };
+
+      function showResult(message, type = "success") {
+        const resultDiv = document.getElementById("result");
+        resultDiv.innerHTML = `<div class="${type}">${message}</div>`;
+        refreshData();
+      }
+
+      function getStorageInfo() {
+        const info = {};
+        for (const [key, storageKey] of Object.entries(STORAGE_KEYS)) {
+          const data = localStorage.getItem(storageKey);
+          if (data) {
+            try {
+              const parsed = JSON.parse(data);
+              info[key] = {
+                count: Array.isArray(parsed) ? parsed.length : 1,
+                size: new Blob([data]).size,
+              };
+            } catch (e) {
+              info[key] = { count: 0, size: 0 };
+            }
+          } else {
+            info[key] = { count: 0, size: 0 };
+          }
+        }
+        return info;
+      }
+
+      function refreshData() {
+        const info = getStorageInfo();
+        const currentDataDiv = document.getElementById("currentData");
+
+        let html = "";
+        html += `📄 Factures: ${info.invoices.count} éléments (${(
+          info.invoices.size / 1024
+        ).toFixed(1)} KB)<br>`;
+        html += `📋 Tâches récentes: ${info.tasks.count} éléments (${(
+          info.tasks.size / 1024
+        ).toFixed(1)} KB)<br>`;
+        html += `👤 Clients: ${info.clients.count} éléments (${(
+          info.clients.size / 1024
+        ).toFixed(1)} KB)<br>`;
+
+        const totalSize =
+          info.invoices.size + info.tasks.size + info.clients.size;
+        html += `<br><strong>Total: ${(totalSize / 1024).toFixed(
+          1
+        )} KB</strong>`;
+
+        currentDataDiv.innerHTML = html;
+      }
+
+      function clearAllData() {
+        if (
+          confirm(
+            "⚠️ Êtes-vous sûr de vouloir supprimer TOUTES les données Facturly ?"
+          )
+        ) {
+          Object.values(STORAGE_KEYS).forEach((key) => {
+            localStorage.removeItem(key);
+          });
+          showResult("✅ Toutes les données ont été supprimées avec succès !");
+        }
+      }
+
+      function clearInvoices() {
+        if (confirm("Supprimer toutes les factures ?")) {
+          localStorage.removeItem(STORAGE_KEYS.invoices);
+          showResult("✅ Toutes les factures ont été supprimées !");
+        }
+      }
+
+      function clearTasks() {
+        if (confirm("Supprimer toutes les tâches récentes ?")) {
+          localStorage.removeItem(STORAGE_KEYS.tasks);
+          showResult("✅ Toutes les tâches récentes ont été supprimées !");
+        }
+      }
+
+      function clearClients() {
+        if (confirm("Supprimer tous les clients ?")) {
+          localStorage.removeItem(STORAGE_KEYS.clients);
+          showResult("✅ Tous les clients ont été supprimés !");
+        }
+      }
+
+      // Initialiser l'affichage
+      refreshData();
+    </script>
+  </body>
+</html>

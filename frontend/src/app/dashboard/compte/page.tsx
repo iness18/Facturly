@@ -1836,6 +1836,7 @@ const SecurityContent = () => {
 
 const CompanyContent = () => {
   const { user } = useAuth();
+  const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
   const [companyData, setCompanyData] = useState({
     // Informations générales
     companyName: "",
@@ -1914,7 +1915,10 @@ const CompanyContent = () => {
     await new Promise((resolve) => setTimeout(resolve, 1500));
     setIsSubmitting(false);
     setIsEditing((prev) => ({ ...prev, [section]: false }));
-    alert(`Informations ${section} sauvegardées avec succès`);
+
+    // Afficher l'icône de succès
+    setSaveSuccess(section);
+    setTimeout(() => setSaveSuccess(null), 3000);
   };
 
   const handleCancel = (section: string) => {
@@ -2221,24 +2225,40 @@ const CompanyContent = () => {
             >
               Annuler
             </button>
-            <button
-              onClick={() => handleSave("general")}
-              disabled={isSubmitting}
-              style={{
-                background: isSubmitting
-                  ? "rgba(139, 92, 246, 0.5)"
-                  : "linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)",
-                border: "none",
-                color: "#ffffff",
-                padding: "8px 16px",
-                borderRadius: "6px",
-                fontSize: "14px",
-                fontWeight: "600",
-                cursor: isSubmitting ? "not-allowed" : "pointer",
-              }}
-            >
-              {isSubmitting ? "Sauvegarde..." : "Sauvegarder"}
-            </button>
+            <div style={{ position: "relative", display: "inline-block" }}>
+              <button
+                onClick={() => handleSave("general")}
+                disabled={isSubmitting}
+                style={{
+                  background: isSubmitting
+                    ? "rgba(139, 92, 246, 0.5)"
+                    : "linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)",
+                  border: "none",
+                  color: "#ffffff",
+                  padding: "8px 16px",
+                  borderRadius: "6px",
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  cursor: isSubmitting ? "not-allowed" : "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                }}
+              >
+                {isSubmitting ? "Sauvegarde..." : "Sauvegarder"}
+                {saveSuccess === "general" && (
+                  <span
+                    style={{
+                      color: "#10b981",
+                      fontSize: "16px",
+                      animation: "fadeInScale 0.3s ease-out",
+                    }}
+                  >
+                    ✓
+                  </span>
+                )}
+              </button>
+            </div>
           </div>
         )}
       </Card>
@@ -2453,24 +2473,40 @@ const CompanyContent = () => {
             >
               Annuler
             </button>
-            <button
-              onClick={() => handleSave("address")}
-              disabled={isSubmitting}
-              style={{
-                background: isSubmitting
-                  ? "rgba(139, 92, 246, 0.5)"
-                  : "linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)",
-                border: "none",
-                color: "#ffffff",
-                padding: "8px 16px",
-                borderRadius: "6px",
-                fontSize: "14px",
-                fontWeight: "600",
-                cursor: isSubmitting ? "not-allowed" : "pointer",
-              }}
-            >
-              {isSubmitting ? "Sauvegarde..." : "Sauvegarder"}
-            </button>
+            <div style={{ position: "relative", display: "inline-block" }}>
+              <button
+                onClick={() => handleSave("address")}
+                disabled={isSubmitting}
+                style={{
+                  background: isSubmitting
+                    ? "rgba(139, 92, 246, 0.5)"
+                    : "linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)",
+                  border: "none",
+                  color: "#ffffff",
+                  padding: "8px 16px",
+                  borderRadius: "6px",
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  cursor: isSubmitting ? "not-allowed" : "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                }}
+              >
+                {isSubmitting ? "Sauvegarde..." : "Sauvegarder"}
+                {saveSuccess === "address" && (
+                  <span
+                    style={{
+                      color: "#10b981",
+                      fontSize: "16px",
+                      animation: "fadeInScale 0.3s ease-out",
+                    }}
+                  >
+                    ✓
+                  </span>
+                )}
+              </button>
+            </div>
           </div>
         )}
       </Card>
@@ -2696,24 +2732,40 @@ const CompanyContent = () => {
             >
               Annuler
             </button>
-            <button
-              onClick={() => handleSave("banking")}
-              disabled={isSubmitting}
-              style={{
-                background: isSubmitting
-                  ? "rgba(139, 92, 246, 0.5)"
-                  : "linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)",
-                border: "none",
-                color: "#ffffff",
-                padding: "8px 16px",
-                borderRadius: "6px",
-                fontSize: "14px",
-                fontWeight: "600",
-                cursor: isSubmitting ? "not-allowed" : "pointer",
-              }}
-            >
-              {isSubmitting ? "Sauvegarde..." : "Sauvegarder"}
-            </button>
+            <div style={{ position: "relative", display: "inline-block" }}>
+              <button
+                onClick={() => handleSave("banking")}
+                disabled={isSubmitting}
+                style={{
+                  background: isSubmitting
+                    ? "rgba(139, 92, 246, 0.5)"
+                    : "linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)",
+                  border: "none",
+                  color: "#ffffff",
+                  padding: "8px 16px",
+                  borderRadius: "6px",
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  cursor: isSubmitting ? "not-allowed" : "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                }}
+              >
+                {isSubmitting ? "Sauvegarde..." : "Sauvegarder"}
+                {saveSuccess === "banking" && (
+                  <span
+                    style={{
+                      color: "#10b981",
+                      fontSize: "16px",
+                      animation: "fadeInScale 0.3s ease-out",
+                    }}
+                  >
+                    ✓
+                  </span>
+                )}
+              </button>
+            </div>
           </div>
         )}
       </Card>
@@ -2874,24 +2926,40 @@ const CompanyContent = () => {
             >
               Annuler
             </button>
-            <button
-              onClick={() => handleSave("branding")}
-              disabled={isSubmitting}
-              style={{
-                background: isSubmitting
-                  ? "rgba(139, 92, 246, 0.5)"
-                  : "linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)",
-                border: "none",
-                color: "#ffffff",
-                padding: "8px 16px",
-                borderRadius: "6px",
-                fontSize: "14px",
-                fontWeight: "600",
-                cursor: isSubmitting ? "not-allowed" : "pointer",
-              }}
-            >
-              {isSubmitting ? "Sauvegarde..." : "Sauvegarder"}
-            </button>
+            <div style={{ position: "relative", display: "inline-block" }}>
+              <button
+                onClick={() => handleSave("branding")}
+                disabled={isSubmitting}
+                style={{
+                  background: isSubmitting
+                    ? "rgba(139, 92, 246, 0.5)"
+                    : "linear-gradient(135deg, #8b5cf6 0%, #ec4899 100%)",
+                  border: "none",
+                  color: "#ffffff",
+                  padding: "8px 16px",
+                  borderRadius: "6px",
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  cursor: isSubmitting ? "not-allowed" : "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                }}
+              >
+                {isSubmitting ? "Sauvegarde..." : "Sauvegarder"}
+                {saveSuccess === "branding" && (
+                  <span
+                    style={{
+                      color: "#10b981",
+                      fontSize: "16px",
+                      animation: "fadeInScale 0.3s ease-out",
+                    }}
+                  >
+                    ✓
+                  </span>
+                )}
+              </button>
+            </div>
           </div>
         )}
       </Card>
@@ -3179,6 +3247,17 @@ export default function MonComptePage() {
           }
           .mobile-tabs {
             display: none !important;
+          }
+        }
+
+        @keyframes fadeInScale {
+          0% {
+            opacity: 0;
+            transform: scale(0.5);
+          }
+          100% {
+            opacity: 1;
+            transform: scale(1);
           }
         }
       `}</style>

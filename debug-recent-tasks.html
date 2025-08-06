@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Debug Recent Tasks</title>
+  </head>
+  <body>
+    <h1>Debug des tâches récentes</h1>
+    <div id="output"></div>
+
+    <script>
+      function debugRecentTasks() {
+        const recentTasks = JSON.parse(
+          localStorage.getItem("facturly_recent_tasks") || "[]"
+        );
+        const invoices = JSON.parse(
+          localStorage.getItem("facturly_invoices") || "[]"
+        );
+
+        const output = document.getElementById("output");
+
+        output.innerHTML = `
+                <h2>Tâches récentes (${recentTasks.length})</h2>
+                <pre>${JSON.stringify(recentTasks, null, 2)}</pre>
+                
+                <h2>Factures (${invoices.length})</h2>
+                <pre>${JSON.stringify(invoices, null, 2)}</pre>
+                
+                <h2>Analyse</h2>
+                <p>Nombre de tâches "invoice_created": ${
+                  recentTasks.filter((t) => t.type === "invoice_created").length
+                }</p>
+                <p>Nombre de factures: ${invoices.length}</p>
+            `;
+      }
+
+      // Exécuter au chargement
+      debugRecentTasks();
+
+      // Bouton pour nettoyer
+      document.body.innerHTML +=
+        '<br><button onclick="cleanupTasks()">Nettoyer les doublons</button>';
+
+      function cleanupTasks() {
+        // Garder seulement une tâche par facture
+        const recentTasks = JSON.parse(
+          localStorage.getItem("facturly_recent_tasks") || "[]"
+        );
+        const invoices = JSON.parse(
+          localStorage.getItem("facturly_invoices") || "[]"
+        );
+
+        const cleanedTasks = [];
+        const seenInvoices = new Set();
+
+        for (const task of recentTasks) {
+          if (task.type === "invoice_created") {
+            // Extraire le numéro de facture de la description
+            const match = task.description.match(/Facture ([^\s]+)/);
+            if (match) {
+              const invoiceNumber = match[1];
+              if (!seenInvoices.has(invoiceNumber)) {
+                seenInvoices.add(invoiceNumber);
+                cleanedTasks.push(task);
+              }
+            }
+          } else {
+            cleanedTasks.push(task);
+          }
+        }
+
+        localStorage.setItem(
+          "facturly_recent_tasks",
+          JSON.stringify(cleanedTasks)
+        );
+        alert(
+          `Nettoyage terminé. ${
+            recentTasks.length - cleanedTasks.length
+          } doublons supprimés.`
+        );
+        debugRecentTasks();
+      }
+    </script>
+  </body>
+</html>

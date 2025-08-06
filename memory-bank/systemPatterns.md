@@ -3,7 +3,7 @@
 ## Architecture générale
 
 ```
-Frontend (Next.js) ←→ Backend (NestJS) ←→ Database (PostgreSQL)
+Frontend (Next.js) ←→ Backend (NestJS) ←→ Database (MongoDB)
 ```
 
 ## Patterns architecturaux
@@ -11,7 +11,7 @@ Frontend (Next.js) ←→ Backend (NestJS) ←→ Database (PostgreSQL)
 ### Backend (NestJS)
 
 - **Modular Architecture**: Séparation par domaines métier
-- **Repository Pattern**: Abstraction de l'accès aux données via Prisma
+- **Schema Pattern**: Définition des modèles via Mongoose
 - **DTO Pattern**: Validation et transformation des données
 - **Dependency Injection**: Gestion des dépendances via NestJS
 
@@ -31,7 +31,8 @@ src/
 ├── app.module.ts           # Module racine
 ├── common/                 # Utilitaires partagés
 ├── config/                 # Configuration
-├── database/               # Service Prisma
+├── database/               # Module MongoDB
+├── schemas/               # Schémas Mongoose
 ├── invoices/              # Module factures
 ├── clients/               # Module clients
 ├── auth/                  # Module authentification
@@ -57,39 +58,58 @@ src/
 
 ### Modèle de données principal
 
-```prisma
-model User {
-  id        String    @id @default(cuid())
-  email     String    @unique
-  name      String
-  company   String?
-  invoices  Invoice[]
-  clients   Client[]
+```typescript
+// User Schema
+@Schema({ timestamps: true })
+export class User {
+  @Prop({ required: true, unique: true })
+  email: string;
+
+  @Prop({ required: true })
+  name: string;
+
+  @Prop()
+  company?: string;
+
+  @Prop({ type: Object })
+  vendorInfo: VendorInfo;
+
+  @Prop({ type: Object })
+  contact: ContactInfo;
 }
 
-model Client {
-  id        String    @id @default(cuid())
-  name      String
-  email     String
-  address   String?
-  userId    String
-  user      User      @relation(fields: [userId], references: [id])
-  invoices  Invoice[]
+// Client Schema (Embedded in Invoice)
+export class ClientInfo {
+  @Prop({ required: true })
+  name: string;
+
+  @Prop({ required: true })
+  email: string;
+
+  @Prop()
+  address?: string;
 }
 
-model Invoice {
-  id            String    @id @default(cuid())
-  number        String    @unique
-  clientId      String
-  client        Client    @relation(fields: [clientId], references: [id])
-  userId        String
-  user          User      @relation(fields: [userId], references: [id])
-  amount        Float
-  status        InvoiceStatus
-  dueDate       DateTime
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  items         InvoiceItem[]
+// Invoice Schema
+@Schema({ timestamps: true })
+export class Invoice {
+  @Prop({ required: true, unique: true })
+  invoiceNumber: string;
+
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: "User" })
+  userId: mongoose.Types.ObjectId;
+
+  @Prop({ type: ClientInfo })
+  client: ClientInfo;
+
+  @Prop({ required: true })
+  amount: number;
+
+  @Prop({ enum: InvoiceStatus })
+  status: InvoiceStatus;
+
+  @Prop([InvoiceItem])
+  items: InvoiceItem[];
 }
 ```
 
@@ -128,6 +148,7 @@ model Invoice {
 
 - **Redis**: Cache applicatif
 - **React Query**: Cache côté client
+- **MongoDB**: Index et cache intégré
 - **Static generation**: Pages statiques
 
 ### Optimisation

@@ -1,0 +1,222 @@
+import { config } from 'dotenv';
+import { resolve } from 'path';
+import { PrismaClient } from '@prisma/client';
+import mongoose from 'mongoose';
+import { User, UserSchema } from '../schemas/user.schema';
+import { Client, ClientSchema } from '../schemas/client.schema';
+import { Invoice, InvoiceSchema } from '../schemas/invoice.schema';
+
+// Charger les variables d'environnement
+config({ path: resolve(__dirname, '../../../.env') });
+
+// URLs de connexion pour localhost (script exécuté en dehors de Docker)
+const postgresUrl =
+  'postgresql://facturly_user:F4ctur1y_S3cur3_P4ssw0rd_2025@localhost:5432/facturly_db?schema=public';
+const mongoUri =
+  'mongodb://facturly_user:F4ctur1y_M0ng0_P4ssw0rd_2025@localhost:27017/facturly_db?authSource=facturly_db';
+
+// Initialiser Prisma avec l'URL localhost
+const prisma = new PrismaClient({
+  datasources: {
+    db: {
+      url: postgresUrl,
+    },
+  },
+});
+
+async function migrateData() {
+  console.log('🚀 Début de la migration des données PostgreSQL → MongoDB...');
+
+  try {
+    // Connexion à MongoDB
+    console.log('🔗 Connexion à MongoDB...');
+    await mongoose.connect(mongoUri);
+
+    // Créer les modèles MongoDB
+    const UserModel = mongoose.model('User', UserSchema);
+    const ClientModel = mongoose.model('Client', ClientSchema);
+    const InvoiceModel = mongoose.model('Invoice', InvoiceSchema);
+
+    console.log('✅ Connexion MongoDB établie');
+
+    // Nettoyer les collections MongoDB existantes
+    console.log('🧹 Nettoyage des collections MongoDB...');
+    await UserModel.deleteMany({});
+    await ClientModel.deleteMany({});
+    await InvoiceModel.deleteMany({});
+    console.log('✅ Collections nettoyées');
+
+    // Migration des utilisateurs
+    console.log('\n👥 Migration des utilisateurs...');
+    const prismaUsers = await prisma.user.findMany();
+    console.log(`   Trouvé ${prismaUsers.length} utilisateurs dans PostgreSQL`);
+
+    const userMapping = new Map(); // Pour mapper les anciens IDs aux nouveaux
+
+    for (const prismaUser of prismaUsers) {
+      const mongoUser = new UserModel({
+        email: prismaUser.email,
+        password: prismaUser.password,
+        name: prismaUser.name,
+        company: prismaUser.company,
+        role: prismaUser.role,
+        isActive: prismaUser.isActive,
+        isBanned: prismaUser.isBanned,
+        lastLogin: prismaUser.lastLogin,
+        loginCount: prismaUser.loginCount,
+
+        // Données embedded
+        vendorInfo: {
+          address: prismaUser.companyAddress,
+          postalCode: prismaUser.companyPostalCode,
+          city: prismaUser.companyCity,
+          country: prismaUser.companyCountry,
+          siret: prismaUser.companySiret,
+          siren: prismaUser.companySiren,
+          vatNumber: prismaUser.companyVatNumber,
+          nafCode: prismaUser.companyNafCode,
+          legalForm: prismaUser.companyLegalForm,
+          capital: prismaUser.companyCapital,
+          registrationCity: prismaUser.companyRegistrationCity,
+          registrationNumber: prismaUser.companyRegistrationNumber,
+        },
+
+        contact: {
+          phone: prismaUser.phone,
+          website: prismaUser.website,
+        },
+
+        banking: {
+          bankName: prismaUser.bankName,
+          iban: prismaUser.bankIban,
+          bic: prismaUser.bankBic,
+        },
+
+        branding: {
+          logoUrl: prismaUser.logoUrl,
+          primaryColor: prismaUser.primaryColor,
+          secondaryColor: prismaUser.secondaryColor,
+        },
+      });
+
+      const savedUser = await mongoUser.save();
+      userMapping.set(prismaUser.id, savedUser._id);
+      console.log(`   ✅ Utilisateur migré: ${prismaUser.email}`);
+    }
+
+    // Migration des clients
+    console.log('\n👤 Migration des clients...');
+    const prismaClients = await prisma.client.findMany();
+    console.log(`   Trouvé ${prismaClients.length} clients dans PostgreSQL`);
+
+    const clientMapping = new Map(); // Pour mapper les anciens IDs aux nouveaux
+
+    for (const prismaClient of prismaClients) {
+      const mongoUserId = userMapping.get(prismaClient.userId);
+      if (!mongoUserId) {
+        console.log(
+          `   ⚠️ Utilisateur non trouvé pour le client ${prismaClient.name}`,
+        );
+        continue;
+      }
+
+      const mongoClient = new ClientModel({
+        userId: mongoUserId,
+        name: prismaClient.name,
+        email: prismaClient.email,
+        phone: prismaClient.phone,
+        address: prismaClient.address,
+        city: prismaClient.city,
+        postalCode: prismaClient.postalCode,
+        country: prismaClient.country,
+        siret: prismaClient.siret,
+        isActive: prismaClient.isActive,
+      });
+
+      const savedClient = await mongoClient.save();
+      clientMapping.set(prismaClient.id, savedClient._id);
+      console.log(`   ✅ Client migré: ${prismaClient.name}`);
+    }
+
+    // Migration des factures
+    console.log('\n📄 Migration des factures...');
+    const prismaInvoices = await prisma.invoice.findMany({
+      include: {
+        client: true,
+        items: true,
+      },
+    });
+    console.log(`   Trouvé ${prismaInvoices.length} factures dans PostgreSQL`);
+
+    for (const prismaInvoice of prismaInvoices) {
+      const mongoUserId = userMapping.get(prismaInvoice.userId);
+      const mongoClientId = clientMapping.get(prismaInvoice.clientId);
+
+      if (!mongoUserId || !mongoClientId) {
+        console.log(
+          `   ⚠️ Utilisateur ou client non trouvé pour la facture ${prismaInvoice.invoiceNumber}`,
+        );
+        continue;
+      }
+
+      // Créer le client embedded (snapshot)
+      const embeddedClient = {
+        _id: mongoClientId,
+        name: prismaInvoice.client.name,
+        email: prismaInvoice.client.email,
+        phone: prismaInvoice.client.phone,
+        address: prismaInvoice.client.address,
+        city: prismaInvoice.client.city,
+        postalCode: prismaInvoice.client.postalCode,
+        country: prismaInvoice.client.country,
+        siret: prismaInvoice.client.siret,
+      };
+
+      const mongoInvoice = new InvoiceModel({
+        invoiceNumber: prismaInvoice.invoiceNumber,
+        userId: mongoUserId,
+        client: embeddedClient,
+        title: prismaInvoice.title,
+        description: prismaInvoice.description,
+        amount: prismaInvoice.amount,
+        taxAmount: prismaInvoice.taxAmount,
+        totalAmount: prismaInvoice.totalAmount,
+        status: prismaInvoice.status,
+        issueDate: prismaInvoice.issueDate,
+        dueDate: prismaInvoice.dueDate,
+        paidDate: prismaInvoice.paidDate,
+        notes: prismaInvoice.notes,
+        items: prismaInvoice.items.map((item) => ({
+          description: item.description,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          totalPrice: item.totalPrice,
+        })),
+      });
+
+      await mongoInvoice.save();
+      console.log(`   ✅ Facture migrée: ${prismaInvoice.invoiceNumber}`);
+    }
+
+    // Statistiques finales
+    console.log('\n📊 Statistiques de migration:');
+    const mongoUserCount = await UserModel.countDocuments();
+    const mongoClientCount = await ClientModel.countDocuments();
+    const mongoInvoiceCount = await InvoiceModel.countDocuments();
+
+    console.log(`   👥 Utilisateurs: ${mongoUserCount}`);
+    console.log(`   👤 Clients: ${mongoClientCount}`);
+    console.log(`   📄 Factures: ${mongoInvoiceCount}`);
+
+    console.log('\n🎉 Migration terminée avec succès !');
+  } catch (error) {
+    console.error('❌ Erreur lors de la migration:', error);
+  } finally {
+    await prisma.$disconnect();
+    await mongoose.disconnect();
+    console.log('🔌 Connexions fermées');
+  }
+}
+
+// Exécuter la migration
+migrateData();

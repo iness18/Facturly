@@ -67,18 +67,31 @@ class HybridStorageService {
   // === GESTION DES FACTURES ===
 
   async getInvoices(): Promise<HybridInvoice[]> {
-    try {
-      if (await this.checkApiAvailability()) {
-        const result = await apiService.getInvoices();
-        if (result.data) {
-          return this.convertApiInvoicesToLocal(result.data);
+    // Vérifier d'abord si l'utilisateur est connecté
+    const token = this.getToken();
+
+    if (token) {
+      try {
+        if (await this.checkApiAvailability()) {
+          const result = await apiService.getInvoices();
+          if (result.data) {
+            // Synchroniser avec localStorage pour la cohérence
+            const convertedInvoices = this.convertApiInvoicesToLocal(
+              result.data
+            );
+            // Mettre à jour le localStorage avec les données de l'API
+            convertedInvoices.forEach((invoice) => {
+              storageService.saveInvoice(invoice);
+            });
+            return convertedInvoices;
+          }
         }
+      } catch (error) {
+        console.warn("API non disponible, utilisation du localStorage:", error);
       }
-    } catch (error) {
-      console.warn("API non disponible, utilisation du localStorage:", error);
     }
 
-    // Fallback vers localStorage
+    // Fallback vers localStorage seulement si pas connecté ou API indisponible
     return storageService.getInvoices();
   }
 
@@ -137,18 +150,29 @@ class HybridStorageService {
   // === GESTION DES CLIENTS ===
 
   async getClients(): Promise<HybridClient[]> {
-    try {
-      if (await this.checkApiAvailability()) {
-        const result = await apiService.getClients();
-        if (result.data) {
-          return this.convertApiClientsToLocal(result.data);
+    // Vérifier d'abord si l'utilisateur est connecté
+    const token = this.getToken();
+
+    if (token) {
+      try {
+        if (await this.checkApiAvailability()) {
+          const result = await apiService.getClients();
+          if (result.data) {
+            // Synchroniser avec localStorage pour la cohérence
+            const convertedClients = this.convertApiClientsToLocal(result.data);
+            // Mettre à jour le localStorage avec les données de l'API
+            convertedClients.forEach((client) => {
+              storageService.saveClient(client);
+            });
+            return convertedClients;
+          }
         }
+      } catch (error) {
+        console.warn("API non disponible, utilisation du localStorage:", error);
       }
-    } catch (error) {
-      console.warn("API non disponible, utilisation du localStorage:", error);
     }
 
-    // Fallback vers localStorage
+    // Fallback vers localStorage seulement si pas connecté ou API indisponible
     return storageService.getClients();
   }
 
@@ -212,32 +236,76 @@ class HybridStorageService {
   async syncWithBackend(): Promise<void> {
     if (!(await this.checkApiAvailability())) {
       console.log("API non disponible, synchronisation impossible");
-      return;
+      throw new Error("API non disponible");
     }
 
     try {
+      // Vérifier d'abord si l'utilisateur est authentifié
+      const token = this.getToken();
+      if (!token) {
+        console.log("Utilisateur non authentifié, synchronisation impossible");
+        throw new Error("Authentification requise pour la synchronisation");
+      }
+
+      let syncedInvoices = 0;
+      let syncedClients = 0;
+
+      // Synchroniser les clients d'abord (car les factures en dépendent)
+      const localClients = storageService.getClients();
+      for (const client of localClients) {
+        if (client.id.startsWith("client_")) {
+          try {
+            // Client créé en local, l'envoyer au backend
+            await this.saveClient(client);
+            syncedClients++;
+          } catch (error) {
+            console.warn(
+              `Erreur lors de la synchronisation du client ${client.name}:`,
+              error
+            );
+          }
+        }
+      }
+
       // Synchroniser les factures
       const localInvoices = storageService.getInvoices();
       for (const invoice of localInvoices) {
         if (invoice.id.startsWith("invoice_")) {
-          // Facture créée en local, l'envoyer au backend
-          await this.saveInvoice(invoice);
+          try {
+            // Vérifier que la facture a les données nécessaires
+            if (!invoice.fullData?.clientId || !invoice.fullData?.userId) {
+              console.warn(
+                `Facture ${invoice.number} ignorée: données manquantes`
+              );
+              continue;
+            }
+            // Facture créée en local, l'envoyer au backend
+            await this.saveInvoice(invoice);
+            syncedInvoices++;
+          } catch (error) {
+            console.warn(
+              `Erreur lors de la synchronisation de la facture ${invoice.number}:`,
+              error
+            );
+          }
         }
       }
 
-      // Synchroniser les clients
-      const localClients = storageService.getClients();
-      for (const client of localClients) {
-        if (client.id.startsWith("client_")) {
-          // Client créé en local, l'envoyer au backend
-          await this.saveClient(client);
-        }
-      }
-
-      console.log("Synchronisation terminée");
+      console.log(
+        `Synchronisation terminée: ${syncedClients} clients, ${syncedInvoices} factures`
+      );
     } catch (error) {
       console.error("Erreur lors de la synchronisation:", error);
+      throw error;
     }
+  }
+
+  private getToken(): string | null {
+    if (typeof window === "undefined") return null;
+    return (
+      localStorage.getItem("facturly_token") ||
+      sessionStorage.getItem("facturly_token")
+    );
   }
 
   // === MÉTHODES DE CONVERSION ===

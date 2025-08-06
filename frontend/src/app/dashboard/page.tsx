@@ -8,7 +8,7 @@ import {
   formatCurrency,
   type RecentTask,
 } from "@/utils/storage";
-import DataMigration from "@/components/DataMigration";
+import { hybridStorageService } from "@/services/storage-hybrid";
 
 // Composant Card réutilisable
 const Card = ({
@@ -504,52 +504,81 @@ const StatCards = ({
 
   // Charger les statistiques au montage du composant
   useEffect(() => {
-    const loadStats = () => {
-      const invoiceStats = storageService.getInvoiceStats();
-      const invoices = storageService.getInvoices();
+    const loadStats = async () => {
+      try {
+        // Utiliser le service hybride pour récupérer les données
+        const invoices = await hybridStorageService.getInvoices();
+        const clients = await hybridStorageService.getClients();
 
-      // Calculer le chiffre d'affaires des 30 derniers jours
-      const thirtyDaysAgo = new Date();
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        // Calculer le chiffre d'affaires des 30 derniers jours
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-      const recentRevenue = invoices
-        .filter((invoice) => {
-          const invoiceDate = new Date(invoice.date);
-          return invoiceDate >= thirtyDaysAgo && invoice.status === "paid";
-        })
-        .reduce((sum, invoice) => sum + parseFloat(invoice.amount), 0);
+        const recentRevenue = invoices
+          .filter((invoice) => {
+            const invoiceDate = new Date(invoice.date);
+            return invoiceDate >= thirtyDaysAgo && invoice.status === "paid";
+          })
+          .reduce((sum, invoice) => sum + parseFloat(invoice.amount), 0);
 
-      // Calculer les factures en attente
-      const pendingInvoices = invoices.filter(
-        (invoice) => invoice.status === "sent" || invoice.status === "overdue"
-      );
+        // Calculer les factures en attente
+        const pendingInvoices = invoices.filter(
+          (invoice) => invoice.status === "sent" || invoice.status === "overdue"
+        );
 
-      const pendingAmount = pendingInvoices.reduce(
-        (sum, invoice) => sum + parseFloat(invoice.amount),
-        0
-      );
+        const pendingAmount = pendingInvoices.reduce(
+          (sum, invoice) => sum + parseFloat(invoice.amount),
+          0
+        );
 
-      // Calculer le nombre de clients uniques
-      const uniqueClients = new Set(invoices.map((invoice) => invoice.client))
-        .size;
+        setStats({
+          revenue: recentRevenue,
+          pendingInvoices: pendingInvoices.length,
+          pendingAmount: pendingAmount,
+          clients: clients.length,
+        });
+      } catch (error) {
+        console.error("Erreur lors du chargement des statistiques:", error);
+        // Fallback vers le service local en cas d'erreur
+        const invoiceStats = storageService.getInvoiceStats();
+        const invoices = storageService.getInvoices();
 
-      setStats({
-        revenue: recentRevenue,
-        pendingInvoices: pendingInvoices.length,
-        pendingAmount: pendingAmount,
-        clients: uniqueClients,
-      });
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+        const recentRevenue = invoices
+          .filter((invoice) => {
+            const invoiceDate = new Date(invoice.date);
+            return invoiceDate >= thirtyDaysAgo && invoice.status === "paid";
+          })
+          .reduce((sum, invoice) => sum + parseFloat(invoice.amount), 0);
+
+        const pendingInvoices = invoices.filter(
+          (invoice) => invoice.status === "sent" || invoice.status === "overdue"
+        );
+
+        const pendingAmount = pendingInvoices.reduce(
+          (sum, invoice) => sum + parseFloat(invoice.amount),
+          0
+        );
+
+        const uniqueClients = new Set(invoices.map((invoice) => invoice.client))
+          .size;
+
+        setStats({
+          revenue: recentRevenue,
+          pendingInvoices: pendingInvoices.length,
+          pendingAmount: pendingAmount,
+          clients: uniqueClients,
+        });
+      }
     };
 
     loadStats();
 
-    // Écouter les changements de localStorage
-    const handleStorageChange = () => {
-      loadStats();
-    };
-
-    window.addEventListener("storage", handleStorageChange);
-    return () => window.removeEventListener("storage", handleStorageChange);
+    // Recharger les stats toutes les 30 secondes pour avoir des données fraîches
+    const interval = setInterval(loadStats, 30000);
+    return () => clearInterval(interval);
   }, []);
   return (
     <div
@@ -1243,9 +1272,6 @@ export default function DashboardPage() {
         isOpen={isRevenueModalOpen}
         onClose={() => setIsRevenueModalOpen(false)}
       />
-
-      {/* Composant de migration des données */}
-      <DataMigration />
 
       <style jsx>{`
         @media (min-width: 768px) {

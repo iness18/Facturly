@@ -1,6 +1,7 @@
 // Service d'authentification avec gestion des sessions
 import React from "react";
 import { apiService } from "./api";
+import { isolatedStorageService } from "../utils/storage-isolated";
 
 interface User {
   id: string;
@@ -60,7 +61,7 @@ class AuthService {
           company: response.data.user.company,
         };
 
-        const token = "jwt-token-" + Date.now(); // TODO: Utiliser un vrai JWT
+        const token = response.data.token; // Utiliser le vrai JWT du backend
 
         // Sauvegarder la session
         this.saveSession(user, token, credentials.rememberMe);
@@ -144,7 +145,7 @@ class AuthService {
           phone: userData.phone,
         };
 
-        const token = "jwt-token-" + Date.now(); // TODO: Utiliser un vrai JWT
+        const token = response.data.token; // Utiliser le vrai JWT du backend
 
         // Sauvegarder la session (par défaut, on se souvient de l'utilisateur après inscription)
         this.saveSession(user, token, true);
@@ -203,6 +204,33 @@ class AuthService {
     const otherStorage = rememberMe ? sessionStorage : localStorage;
     otherStorage.removeItem(this.USER_KEY);
     otherStorage.removeItem(this.TOKEN_KEY);
+
+    // 🔐 Configurer le stockage isolé pour cet utilisateur
+    this.setupIsolatedStorage(user);
+  }
+
+  // 🔐 Configurer le stockage isolé pour un utilisateur
+  private setupIsolatedStorage(user: User): void {
+    try {
+      // Définir l'utilisateur actuel dans le service de stockage isolé
+      isolatedStorageService.setCurrentUser({
+        userId: user.id,
+        email: user.email,
+        name: user.name,
+        isActive: true,
+      });
+
+      // Tenter une migration depuis l'ancien système si nécessaire
+      const migrated = isolatedStorageService.migrateFromOldStorage();
+      if (migrated) {
+        console.log("📦 Migration des données effectuée pour:", user.email);
+      }
+    } catch (error) {
+      console.error(
+        "Erreur lors de la configuration du stockage isolé:",
+        error
+      );
+    }
   }
 
   // Récupérer l'utilisateur connecté
@@ -255,12 +283,17 @@ class AuthService {
   logout(): void {
     if (typeof window === "undefined") return;
 
+    // 🧹 Nettoyer la session du stockage isolé
+    isolatedStorageService.logout();
+
     // Nettoyer toutes les données de session
     localStorage.removeItem(this.USER_KEY);
     localStorage.removeItem(this.TOKEN_KEY);
     localStorage.removeItem(this.REMEMBER_KEY);
     sessionStorage.removeItem(this.USER_KEY);
     sessionStorage.removeItem(this.TOKEN_KEY);
+
+    console.log("🚪 Déconnexion complète effectuée");
 
     // Rediriger vers la page de connexion
     window.location.href = "/connexion";
@@ -299,11 +332,32 @@ class AuthService {
     const token = this.getToken();
 
     if (user && token) {
-      // Session valide, on peut continuer
-      console.log("Session utilisateur restaurée:", user.email);
+      // Session valide, restaurer le stockage isolé
+      this.setupIsolatedStorage(user);
+      console.log("🔄 Session utilisateur restaurée:", user.email);
     } else {
       // Pas de session valide, nettoyer les données corrompues
       this.logout();
+    }
+  }
+
+  // 🧹 Nettoyer les données de l'utilisateur actuel
+  clearCurrentUserData(): void {
+    isolatedStorageService.clearCurrentUserData();
+  }
+
+  // 🧹 Nettoyer toutes les données Facturly
+  clearAllData(): void {
+    isolatedStorageService.clearAllUsersData();
+    this.logout();
+  }
+
+  // 🔄 Restaurer la session (méthode publique)
+  restoreSession(): void {
+    const user = this.getCurrentUser();
+    if (user && this.isAuthenticated()) {
+      this.setupIsolatedStorage(user);
+      console.log("🔄 Session restaurée pour:", user.email);
     }
   }
 }

@@ -8,6 +8,29 @@ interface ApiResponse<T> {
 }
 
 class ApiService {
+  private getAuthHeaders(): Record<string, string> {
+    const token = this.getToken();
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+
+    return headers;
+  }
+
+  private getToken(): string | null {
+    if (typeof window === "undefined") return null;
+
+    // Vérifier localStorage puis sessionStorage
+    return (
+      localStorage.getItem("facturly_token") ||
+      sessionStorage.getItem("facturly_token")
+    );
+  }
+
   private async request<T>(
     endpoint: string,
     options: RequestInit = {}
@@ -16,7 +39,7 @@ class ApiService {
       const url = `${API_BASE_URL}${endpoint}`;
       const response = await fetch(url, {
         headers: {
-          "Content-Type": "application/json",
+          ...this.getAuthHeaders(),
           ...options.headers,
         },
         ...options,
@@ -24,6 +47,21 @@ class ApiService {
 
       if (!response.ok) {
         const errorText = await response.text();
+
+        // Gestion spécifique des erreurs d'authentification
+        if (response.status === 401) {
+          let errorData;
+          try {
+            errorData = JSON.parse(errorText);
+          } catch {
+            errorData = { message: errorText };
+          }
+
+          return {
+            error: errorData.message || "Email ou mot de passe incorrect",
+          };
+        }
+
         throw new Error(
           `HTTP error! status: ${response.status}, message: ${errorText}`
         );
@@ -75,7 +113,7 @@ class ApiService {
 
   async updateInvoice(id: string, invoiceData: any) {
     return this.request<any>(`/invoices/${id}`, {
-      method: "PUT",
+      method: "PATCH",
       body: JSON.stringify(invoiceData),
     });
   }
@@ -105,7 +143,7 @@ class ApiService {
 
   async updateClient(id: string, clientData: any) {
     return this.request<any>(`/clients/${id}`, {
-      method: "PUT",
+      method: "PATCH",
       body: JSON.stringify(clientData),
     });
   }

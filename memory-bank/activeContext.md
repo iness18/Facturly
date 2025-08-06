@@ -7,23 +7,24 @@
 - ✅ Structure de base frontend/backend configurée
 - ✅ Docker Compose opérationnel
 - ✅ Interface landing page moderne et attractive
-- ✅ Base de données PostgreSQL configurée
-- ✅ Schéma Prisma de base défini
+- ✅ Base de données MongoDB configurée
+- ✅ Schémas Mongoose définis
 - ✅ Composants UI shadcn/ui intégrés
+- ✅ Migration PostgreSQL → MongoDB complétée
 
 ### Problèmes critiques identifiés
 
-- 🚨 **Backend non fonctionnel**: Prisma non intégré dans NestJS
-- 🚨 **Pas de CORS**: Frontend ne peut pas communiquer avec backend
+- ✅ **Backend fonctionnel**: MongoDB intégré avec Mongoose
+- ✅ **CORS configuré**: Frontend communique avec backend
 - 🚨 **Animations CSS manquantes**: Classes utilisées mais non définies
 - 🚨 **Sécurité**: Mots de passe en dur dans .env
-- 🚨 **Validation manquante**: Aucune validation des données
+- ✅ **Validation implémentée**: DTOs avec class-validator
 - ✅ **Erreurs ESLint corrigées**: Apostrophes non échappées dans les composants React
 - ✅ **Conflits serveurs Next.js résolus**: Multiples instances causaient des erreurs ENOENT
 
 ### Focus actuel
 
-Le projet est en phase de **setup initial** avec une belle interface mais un backend non fonctionnel. La priorité est de créer un MVP fonctionnel.
+Le projet est en phase de **développement actif** avec une architecture MongoDB fonctionnelle. La priorité est d'enrichir les fonctionnalités et optimiser l'expérience utilisateur.
 
 ## Décisions techniques récentes
 
@@ -31,7 +32,7 @@ Le projet est en phase de **setup initial** avec une belle interface mais un bac
 
 - **Monorepo** avec frontend et backend séparés
 - **API REST** plutôt que GraphQL pour la simplicité
-- **PostgreSQL** pour la robustesse des données financières
+- **MongoDB** pour la flexibilité des données et performance
 - **Docker** pour la reproductibilité de l'environnement
 
 ### Patterns adoptés
@@ -45,21 +46,21 @@ Le projet est en phase de **setup initial** avec une belle interface mais un bac
 
 ### Immédiat (cette semaine)
 
-1. **Intégrer Prisma dans NestJS**
+1. ✅ **MongoDB intégré dans NestJS**
 
-   - Créer le service Prisma
-   - Configurer le module database
-   - Tester la connexion
+   - Service MongoDB configuré
+   - Module database opérationnel
+   - Connexion testée et fonctionnelle
 
-2. **Configurer CORS**
+2. ✅ **CORS configuré**
 
-   - Permettre les requêtes depuis le frontend
-   - Sécuriser les origines autorisées
+   - Requêtes frontend autorisées
+   - Origines sécurisées
 
-3. **Créer l'API Invoice**
-   - CRUD complet pour les factures
+3. ✅ **API complètes créées**
+   - CRUD complet pour users, clients, factures
    - DTOs avec validation
-   - Tests de base
+   - Services MongoDB fonctionnels
 
 ### Court terme (2 semaines)
 
@@ -157,21 +158,22 @@ docker-compose up -d
 # Logs du backend
 docker-compose logs -f backend
 
-# Accès à la base de données
-docker-compose exec db psql -U facturly_user -d facturly_db
+# Accès à la base de données MongoDB
+docker exec -it facturly_mongodb mongosh --username facturly_user --password F4ctur1y_M0ng0_P4ssw0rd_2025 --authenticationDatabase facturly_db facturly_db
 
-# Migrations Prisma
-cd backend && npx prisma migrate dev
+# Tests MongoDB
+cd backend && npm run mongodb:test
 
-# Génération du client Prisma
-cd backend && npx prisma generate
+# Migration des données (si nécessaire)
+cd backend && npm run mongodb:migrate
 ```
 
 ### URLs importantes
 
 - Frontend: http://localhost:3000
 - Backend: http://localhost:3001
-- Base de données: localhost:5432
+- Base de données MongoDB: localhost:27017
+- Mongo Express: http://localhost:8081
 
 ## Notes importantes
 
@@ -179,3 +181,32 @@ cd backend && npx prisma generate
 - **Turbopack** est activé pour de meilleures performances de développement
 - La base de données utilise des **volumes persistants**
 - Les **health checks** sont configurés pour PostgreSQL
+
+## Connexion à la base de données MongoDB
+
+### Paramètres de connexion corrects
+
+Pour se connecter à MongoDB depuis un client externe (MongoDB Compass, Studio 3T, etc.) :
+
+```
+URI: mongodb://facturly_user:F4ctur1y_M0ng0_P4ssw0rd_2025@localhost:27017/facturly_db?authSource=facturly_db
+Host: localhost
+Port: 27017
+Database: facturly_db
+Username: facturly_user
+Password: F4ctur1y_M0ng0_P4ssw0rd_2025
+```
+
+### Erreurs courantes à éviter
+
+- ❌ Ne pas oublier l'authSource dans l'URI
+- ❌ Ne pas utiliser l'IP interne Docker (172.19.0.x)
+- ✅ Utiliser `facturly_user` comme username
+- ✅ Utiliser `localhost` comme host
+
+### Mongo Express intégré
+
+Accessible sur http://localhost:8081 :
+
+- Username: admin
+- Password: admin123

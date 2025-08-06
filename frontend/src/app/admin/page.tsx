@@ -192,6 +192,38 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
 
+  // États pour les modals
+  const [packFormData, setPackFormData] = useState({
+    name: "",
+    description: "",
+    price: 0,
+    duration: 30,
+    features: "",
+    limits: {
+      invoices: 100,
+      clients: 50,
+      exports: 25,
+    },
+  });
+
+  const [campaignFormData, setCampaignFormData] = useState({
+    name: "",
+    subject: "",
+    content: "",
+  });
+
+  const [promoCodeFormData, setPromoCodeFormData] = useState({
+    code: "",
+    description: "",
+    discount: 0,
+    type: "percentage" as "percentage" | "fixed",
+    maxUses: 100,
+    validFrom: new Date().toISOString().split("T")[0],
+    validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .split("T")[0],
+  });
+
   useEffect(() => {
     loadAdminData();
   }, []);
@@ -401,21 +433,31 @@ export default function AdminPage() {
   // Fonctions pour les campagnes email
   const createNewCampaign = () => {
     setSelectedCampaign(null);
+    setCampaignFormData({
+      name: "",
+      subject: "",
+      content: "",
+    });
     setShowCampaignModal(true);
   };
 
   const editCampaign = (campaign: EmailCampaign) => {
     setSelectedCampaign(campaign);
+    setCampaignFormData({
+      name: campaign.name,
+      subject: campaign.subject,
+      content: campaign.content,
+    });
     setShowCampaignModal(true);
   };
 
-  const saveCampaign = async (campaignData: any) => {
+  const saveCampaign = async () => {
     try {
       if (selectedCampaign) {
         // Modifier une campagne existante
         const updatedCampaigns = campaigns.map((campaign) =>
           campaign.id === selectedCampaign.id
-            ? { ...campaign, ...campaignData, id: selectedCampaign.id }
+            ? { ...campaign, ...campaignFormData, id: selectedCampaign.id }
             : campaign
         );
         setCampaigns(updatedCampaigns);
@@ -424,7 +466,7 @@ export default function AdminPage() {
         // Créer une nouvelle campagne
         const newCampaign: EmailCampaign = {
           id: Date.now().toString(),
-          ...campaignData,
+          ...campaignFormData,
           status: "draft" as const,
           recipientsCount: 0,
           openRate: 0,
@@ -484,21 +526,49 @@ export default function AdminPage() {
   // Fonctions pour les codes promo
   const createNewPromoCode = () => {
     setSelectedPromoCode(null);
+    setPromoCodeFormData({
+      code: "",
+      description: "",
+      discount: 0,
+      type: "percentage" as "percentage" | "fixed",
+      maxUses: 100,
+      validFrom: new Date().toISOString().split("T")[0],
+      validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
+        .toISOString()
+        .split("T")[0],
+    });
     setShowPromoCodeModal(true);
   };
 
   const editPromoCode = (promoCode: PromoCode) => {
     setSelectedPromoCode(promoCode);
+    setPromoCodeFormData({
+      code: promoCode.code,
+      description: promoCode.description,
+      discount: promoCode.discount,
+      type: promoCode.type,
+      maxUses: promoCode.maxUses,
+      validFrom: promoCode.validFrom.split("T")[0],
+      validUntil: promoCode.validUntil.split("T")[0],
+    });
     setShowPromoCodeModal(true);
   };
 
-  const savePromoCode = async (promoCodeData: any) => {
+  const savePromoCode = async () => {
     try {
       if (selectedPromoCode) {
         // Modifier un code promo existant
         const updatedPromoCodes = promoCodes.map((promo) =>
           promo.id === selectedPromoCode.id
-            ? { ...promo, ...promoCodeData, id: selectedPromoCode.id }
+            ? {
+                ...promo,
+                ...promoCodeFormData,
+                validFrom: new Date(promoCodeFormData.validFrom).toISOString(),
+                validUntil: new Date(
+                  promoCodeFormData.validUntil
+                ).toISOString(),
+                id: selectedPromoCode.id,
+              }
             : promo
         );
         setPromoCodes(updatedPromoCodes);
@@ -507,7 +577,9 @@ export default function AdminPage() {
         // Créer un nouveau code promo
         const newPromoCode: PromoCode = {
           id: Date.now().toString(),
-          ...promoCodeData,
+          ...promoCodeFormData,
+          validFrom: new Date(promoCodeFormData.validFrom).toISOString(),
+          validUntil: new Date(promoCodeFormData.validUntil).toISOString(),
           currentUses: 0,
           isActive: true,
         };
@@ -607,6 +679,18 @@ export default function AdminPage() {
 
   const editPack = (pack: Pack) => {
     setSelectedPack(pack);
+    setPackFormData({
+      name: pack.name,
+      description: pack.description,
+      price: pack.price,
+      duration: pack.duration,
+      features: pack.features.join("\n"),
+      limits: {
+        invoices: pack.limits.invoices,
+        clients: pack.limits.clients,
+        exports: pack.limits.exports,
+      },
+    });
     setShowPackModal(true);
   };
 
@@ -769,7 +853,7 @@ export default function AdminPage() {
         { id: "content", label: "📝 Contenu" },
         { id: "tickets", label: "🐛 Tickets" },
         { id: "settings", label: "🛠️ Paramètres" },
-        { id: "roles", label: "🔒 Rôles" },
+        { id: "roles", label: "👥 Rôles" },
       ].map((tab) => (
         <button
           key={tab.id}
@@ -2619,7 +2703,7 @@ export default function AdminPage() {
                         : ticket.status === "in_progress"
                         ? "⏳ En cours"
                         : ticket.status === "closed"
-                        ? "🔒 Fermé"
+                        ? "✅ Fermé"
                         : "🆕 Ouvert"}
                     </span>
                   </td>
@@ -3477,24 +3561,13 @@ export default function AdminPage() {
   const renderPackModal = () => {
     if (!showPackModal || !selectedPack) return null;
 
-    const [formData, setFormData] = useState({
-      name: selectedPack.name,
-      description: selectedPack.description,
-      price: selectedPack.price,
-      duration: selectedPack.duration,
-      features: selectedPack.features.join("\n"),
-      limits: {
-        invoices: selectedPack.limits.invoices,
-        clients: selectedPack.limits.clients,
-        exports: selectedPack.limits.exports,
-      },
-    });
-
     const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
       const packData = {
-        ...formData,
-        features: formData.features.split("\n").filter((f) => f.trim() !== ""),
+        ...packFormData,
+        features: packFormData.features
+          .split("\n")
+          .filter((f) => f.trim() !== ""),
       };
       updatePack(packData);
     };
@@ -3574,9 +3647,9 @@ export default function AdminPage() {
               </label>
               <input
                 type="text"
-                value={formData.name}
+                value={packFormData.name}
                 onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
+                  setPackFormData({ ...packFormData, name: e.target.value })
                 }
                 style={{
                   width: "100%",
@@ -3604,9 +3677,12 @@ export default function AdminPage() {
                 Description
               </label>
               <textarea
-                value={formData.description}
+                value={packFormData.description}
                 onChange={(e) =>
-                  setFormData({ ...formData, description: e.target.value })
+                  setPackFormData({
+                    ...packFormData,
+                    description: e.target.value,
+                  })
                 }
                 rows={3}
                 style={{
@@ -3645,10 +3721,10 @@ export default function AdminPage() {
                 <input
                   type="number"
                   step="0.01"
-                  value={formData.price}
+                  value={packFormData.price}
                   onChange={(e) =>
-                    setFormData({
-                      ...formData,
+                    setPackFormData({
+                      ...packFormData,
                       price: parseFloat(e.target.value),
                     })
                   }
@@ -3679,10 +3755,10 @@ export default function AdminPage() {
                 </label>
                 <input
                   type="number"
-                  value={formData.duration}
+                  value={packFormData.duration}
                   onChange={(e) =>
-                    setFormData({
-                      ...formData,
+                    setPackFormData({
+                      ...packFormData,
                       duration: parseInt(e.target.value),
                     })
                   }
@@ -3713,9 +3789,9 @@ export default function AdminPage() {
                 Fonctionnalités (une par ligne)
               </label>
               <textarea
-                value={formData.features}
+                value={packFormData.features}
                 onChange={(e) =>
-                  setFormData({ ...formData, features: e.target.value })
+                  setPackFormData({ ...packFormData, features: e.target.value })
                 }
                 rows={4}
                 style={{
@@ -3764,12 +3840,12 @@ export default function AdminPage() {
                   </label>
                   <input
                     type="number"
-                    value={formData.limits.invoices}
+                    value={packFormData.limits.invoices}
                     onChange={(e) =>
-                      setFormData({
-                        ...formData,
+                      setPackFormData({
+                        ...packFormData,
                         limits: {
-                          ...formData.limits,
+                          ...packFormData.limits,
                           invoices: parseInt(e.target.value),
                         },
                       })
@@ -3801,12 +3877,12 @@ export default function AdminPage() {
                   </label>
                   <input
                     type="number"
-                    value={formData.limits.clients}
+                    value={packFormData.limits.clients}
                     onChange={(e) =>
-                      setFormData({
-                        ...formData,
+                      setPackFormData({
+                        ...packFormData,
                         limits: {
-                          ...formData.limits,
+                          ...packFormData.limits,
                           clients: parseInt(e.target.value),
                         },
                       })
@@ -3838,12 +3914,12 @@ export default function AdminPage() {
                   </label>
                   <input
                     type="number"
-                    value={formData.limits.exports}
+                    value={packFormData.limits.exports}
                     onChange={(e) =>
-                      setFormData({
-                        ...formData,
+                      setPackFormData({
+                        ...packFormData,
                         limits: {
-                          ...formData.limits,
+                          ...packFormData.limits,
                           exports: parseInt(e.target.value),
                         },
                       })
@@ -3908,15 +3984,9 @@ export default function AdminPage() {
   const renderCampaignModal = () => {
     if (!showCampaignModal) return null;
 
-    const [formData, setFormData] = useState({
-      name: selectedCampaign?.name || "",
-      subject: selectedCampaign?.subject || "",
-      content: selectedCampaign?.content || "",
-    });
-
     const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
-      saveCampaign(formData);
+      saveCampaign();
     };
 
     return (
@@ -3994,9 +4064,12 @@ export default function AdminPage() {
               </label>
               <input
                 type="text"
-                value={formData.name}
+                value={campaignFormData.name}
                 onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
+                  setCampaignFormData({
+                    ...campaignFormData,
+                    name: e.target.value,
+                  })
                 }
                 placeholder="Ex: Newsletter Février 2025"
                 style={{
@@ -4026,9 +4099,12 @@ export default function AdminPage() {
               </label>
               <input
                 type="text"
-                value={formData.subject}
+                value={campaignFormData.subject}
                 onChange={(e) =>
-                  setFormData({ ...formData, subject: e.target.value })
+                  setCampaignFormData({
+                    ...campaignFormData,
+                    subject: e.target.value,
+                  })
                 }
                 placeholder="Ex: Découvrez les nouveautés de Facturly"
                 style={{
@@ -4057,9 +4133,12 @@ export default function AdminPage() {
                 Contenu de l'email
               </label>
               <textarea
-                value={formData.content}
+                value={campaignFormData.content}
                 onChange={(e) =>
-                  setFormData({ ...formData, content: e.target.value })
+                  setCampaignFormData({
+                    ...campaignFormData,
+                    content: e.target.value,
+                  })
                 }
                 rows={6}
                 placeholder="Rédigez le contenu de votre campagne email..."
@@ -4122,30 +4201,9 @@ export default function AdminPage() {
   const renderPromoCodeModal = () => {
     if (!showPromoCodeModal) return null;
 
-    const [formData, setFormData] = useState({
-      code: selectedPromoCode?.code || "",
-      description: selectedPromoCode?.description || "",
-      discount: selectedPromoCode?.discount || 0,
-      type: selectedPromoCode?.type || ("percentage" as "percentage" | "fixed"),
-      maxUses: selectedPromoCode?.maxUses || 100,
-      validFrom: selectedPromoCode?.validFrom
-        ? selectedPromoCode.validFrom.split("T")[0]
-        : new Date().toISOString().split("T")[0],
-      validUntil: selectedPromoCode?.validUntil
-        ? selectedPromoCode.validUntil.split("T")[0]
-        : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-            .toISOString()
-            .split("T")[0],
-    });
-
     const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
-      const promoCodeData = {
-        ...formData,
-        validFrom: new Date(formData.validFrom).toISOString(),
-        validUntil: new Date(formData.validUntil).toISOString(),
-      };
-      savePromoCode(promoCodeData);
+      savePromoCode();
     };
 
     return (
@@ -4225,10 +4283,10 @@ export default function AdminPage() {
               </label>
               <input
                 type="text"
-                value={formData.code}
+                value={promoCodeFormData.code}
                 onChange={(e) =>
-                  setFormData({
-                    ...formData,
+                  setPromoCodeFormData({
+                    ...promoCodeFormData,
                     code: e.target.value.toUpperCase(),
                   })
                 }
@@ -4261,9 +4319,12 @@ export default function AdminPage() {
               </label>
               <input
                 type="text"
-                value={formData.description}
+                value={promoCodeFormData.description}
                 onChange={(e) =>
-                  setFormData({ ...formData, description: e.target.value })
+                  setPromoCodeFormData({
+                    ...promoCodeFormData,
+                    description: e.target.value,
+                  })
                 }
                 placeholder="Ex: Réduction de bienvenue"
                 style={{
@@ -4299,10 +4360,10 @@ export default function AdminPage() {
                   Type de réduction
                 </label>
                 <select
-                  value={formData.type}
+                  value={promoCodeFormData.type}
                   onChange={(e) =>
-                    setFormData({
-                      ...formData,
+                    setPromoCodeFormData({
+                      ...promoCodeFormData,
                       type: e.target.value as "percentage" | "fixed",
                     })
                   }
@@ -4337,14 +4398,16 @@ export default function AdminPage() {
                 <input
                   type="number"
                   step="0.01"
-                  value={formData.discount}
+                  value={promoCodeFormData.discount}
                   onChange={(e) =>
-                    setFormData({
-                      ...formData,
+                    setPromoCodeFormData({
+                      ...promoCodeFormData,
                       discount: parseFloat(e.target.value),
                     })
                   }
-                  placeholder={formData.type === "percentage" ? "20" : "10.00"}
+                  placeholder={
+                    promoCodeFormData.type === "percentage" ? "20" : "10.00"
+                  }
                   style={{
                     width: "100%",
                     background: "rgba(255, 255, 255, 0.1)",
@@ -4373,10 +4436,10 @@ export default function AdminPage() {
               </label>
               <input
                 type="number"
-                value={formData.maxUses}
+                value={promoCodeFormData.maxUses}
                 onChange={(e) =>
-                  setFormData({
-                    ...formData,
+                  setPromoCodeFormData({
+                    ...promoCodeFormData,
                     maxUses: parseInt(e.target.value),
                   })
                 }
@@ -4415,9 +4478,12 @@ export default function AdminPage() {
                 </label>
                 <input
                   type="date"
-                  value={formData.validFrom}
+                  value={promoCodeFormData.validFrom}
                   onChange={(e) =>
-                    setFormData({ ...formData, validFrom: e.target.value })
+                    setPromoCodeFormData({
+                      ...promoCodeFormData,
+                      validFrom: e.target.value,
+                    })
                   }
                   style={{
                     width: "100%",
@@ -4446,9 +4512,12 @@ export default function AdminPage() {
                 </label>
                 <input
                   type="date"
-                  value={formData.validUntil}
+                  value={promoCodeFormData.validUntil}
                   onChange={(e) =>
-                    setFormData({ ...formData, validUntil: e.target.value })
+                    setPromoCodeFormData({
+                      ...promoCodeFormData,
+                      validUntil: e.target.value,
+                    })
                   }
                   style={{
                     width: "100%",

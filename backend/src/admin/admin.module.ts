@@ -1,25 +1,13 @@
 import { Module } from '@nestjs/common';
-import { AdminSimpleController } from './admin-simple.controller';
-import { AdminDashboardSimpleService } from './admin-dashboard-simple.service';
-import { AdminUsersSimpleService } from './admin-users-simple.service';
-import { AdminPacksSimpleService } from './admin-packs-simple.service';
-import { AdminMockService } from './admin-mock.service';
-import { DatabaseModule } from '../database/database.module';
+import { AdminController } from './admin.controller';
+import { UsersModule } from '../users/users.module';
+import { ClientsModule } from '../clients/clients.module';
+import { InvoicesModule } from '../invoices/invoices.module';
 
 @Module({
-  imports: [DatabaseModule],
-  controllers: [AdminSimpleController],
-  providers: [
-    AdminDashboardSimpleService,
-    AdminUsersSimpleService,
-    AdminPacksSimpleService,
-    AdminMockService,
-  ],
-  exports: [
-    AdminDashboardSimpleService,
-    AdminUsersSimpleService,
-    AdminPacksSimpleService,
-    AdminMockService,
-  ],
+  imports: [UsersModule, ClientsModule, InvoicesModule],
+  controllers: [AdminController],
+  providers: [],
+  exports: [],
 })
 export class AdminModule {}

@@ -4,8 +4,6 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install
 COPY . .
-# Génère le client Prisma basé sur votre schema.prisma
-RUN npx prisma generate
 # Build l'application NestJS
 RUN npm run build
 
@@ -34,9 +32,6 @@ COPY --from=builder /app/dist ./dist
 # Copions les dépendances de production
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./package.json
-
-# Copions le schéma Prisma nécessaire pour le client
-COPY --from=builder /app/prisma ./prisma
 
 EXPOSE 3000
 # La commande est correcte si le build produit bien un dist/main.js

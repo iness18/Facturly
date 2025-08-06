@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test d'isolation des données Facturly</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          sans-serif;
+        max-width: 800px;
+        margin: 20px auto;
+        padding: 20px;
+        background: #f5f5f5;
+      }
+      .container {
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+      }
+      h1 {
+        color: #2563eb;
+        margin-bottom: 20px;
+      }
+      h2 {
+        color: #1f2937;
+        border-bottom: 2px solid #e5e7eb;
+        padding-bottom: 10px;
+      }
+      .user-section {
+        border: 2px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 15px 0;
+      }
+      .user-1 {
+        border-color: #3b82f6;
+        background: #eff6ff;
+      }
+      .user-2 {
+        border-color: #10b981;
+        background: #ecfdf5;
+      }
+      .current-user {
+        border-color: #f59e0b;
+        background: #fffbeb;
+      }
+      button {
+        background: #2563eb;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 6px;
+        cursor: pointer;
+        margin: 5px;
+        font-size: 14px;
+      }
+      button:hover {
+        background: #1d4ed8;
+      }
+      .danger {
+        background: #dc2626;
+      }
+      .danger:hover {
+        background: #b91c1c;
+      }
+      .success {
+        background: #10b981;
+      }
+      .success:hover {
+        background: #059669;
+      }
+      .data-display {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 15px;
+        margin: 10px 0;
+        font-family: monospace;
+        font-size: 12px;
+        max-height: 200px;
+        overflow-y: auto;
+      }
+      .info {
+        background: #e0f2fe;
+        border: 1px solid #0284c7;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 20px 0;
+      }
+      .warning {
+        background: #fef3c7;
+        border: 1px solid #f59e0b;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 20px 0;
+      }
+      .success-msg {
+        background: #d1fae5;
+        border: 1px solid #10b981;
+        padding: 15px;
+        border-radius: 8px;
+        margin: 20px 0;
+      }
+      input {
+        padding: 8px 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        margin: 5px;
+        width: 200px;
+      }
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 10px;
+        margin: 15px 0;
+      }
+      .stat-card {
+        background: #f9fafb;
+        padding: 15px;
+        border-radius: 8px;
+        text-align: center;
+        border: 1px solid #e5e7eb;
+      }
+      .stat-number {
+        font-size: 24px;
+        font-weight: bold;
+        color: #1f2937;
+      }
+      .stat-label {
+        font-size: 12px;
+        color: #6b7280;
+        text-transform: uppercase;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🧪 Test d'isolation des données Facturly</h1>
+
+      <div class="info">
+        <strong>📋 Objectif :</strong> Vérifier que chaque utilisateur a ses
+        propres données isolées dans localStorage.
+      </div>
+
+      <div class="warning">
+        <strong>⚠️ Important :</strong> Ce test simule différents utilisateurs.
+        Les données sont stockées localement dans votre navigateur.
+      </div>
+
+      <!-- Section utilisateur actuel -->
+      <div class="user-section current-user">
+        <h2>👤 Utilisateur actuel</h2>
+        <div id="currentUserInfo">Aucun utilisateur connecté</div>
+        <button onclick="clearCurrentSession()">🚪 Déconnecter</button>
+      </div>
+
+      <!-- Simulation utilisateur 1 -->
+      <div class="user-section user-1">
+        <h2>👨‍💼 Utilisateur Test 1 (Jean Dupont)</h2>
+        <button onclick="simulateUser1()">🔐 Se connecter comme Jean</button>
+        <button onclick="addDataUser1()" class="success">
+          ➕ Ajouter des données
+        </button>
+        <button onclick="showDataUser1()">👁️ Voir les données</button>
+
+        <div class="stats" id="statsUser1">
+          <div class="stat-card">
+            <div class="stat-number" id="invoicesUser1">0</div>
+            <div class="stat-label">Factures</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number" id="tasksUser1">0</div>
+            <div class="stat-label">Tâches</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number" id="clientsUser1">0</div>
+            <div class="stat-label">Clients</div>
+          </div>
+        </div>
+
+        <div class="data-display" id="dataUser1">Aucune donnée</div>
+      </div>
+
+      <!-- Simulation utilisateur 2 -->
+      <div class="user-section user-2">
+        <h2>👩‍💼 Utilisateur Test 2 (Marie Martin)</h2>
+        <button onclick="simulateUser2()">🔐 Se connecter comme Marie</button>
+        <button onclick="addDataUser2()" class="success">
+          ➕ Ajouter des données
+        </button>
+        <button onclick="showDataUser2()">👁️ Voir les données</button>
+
+        <div class="stats" id="statsUser2">
+          <div class="stat-card">
+            <div class="stat-number" id="invoicesUser2">0</div>
+            <div class="stat-label">Factures</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number" id="tasksUser2">0</div>
+            <div class="stat-label">Tâches</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number" id="clientsUser2">0</div>
+            <div class="stat-label">Clients</div>
+          </div>
+        </div>
+
+        <div class="data-display" id="dataUser2">Aucune donnée</div>
+      </div>
+
+      <!-- Actions globales -->
+      <div class="container">
+        <h2>🛠️ Actions de test</h2>
+        <button onclick="showAllStorageKeys()">
+          🔍 Voir toutes les clés localStorage
+        </button>
+        <button onclick="testIsolation()" class="success">
+          ✅ Test d'isolation complet
+        </button>
+        <button onclick="clearAllTestData()" class="danger">
+          🗑️ Nettoyer toutes les données de test
+        </button>
+
+        <div class="data-display" id="allKeysDisplay">
+          Cliquez sur "Voir toutes les clés" pour afficher
+        </div>
+      </div>
+
+      <!-- Résultats des tests -->
+      <div class="container">
+        <h2>📊 Résultats des tests</h2>
+        <div id="testResults">Aucun test effectué</div>
+      </div>
+    </div>
+
+    <script>
+      // Simulation du service de stockage isolé
+      class TestIsolatedStorage {
+        constructor() {
+          this.currentUser = null;
+          this.globalPrefix = "facturly_user_";
+          this.sessionKey = "facturly_current_session";
+        }
+
+        setCurrentUser(user) {
+          this.currentUser = user;
+          localStorage.setItem(this.sessionKey, JSON.stringify(user));
+          console.log(`🔐 Utilisateur défini: ${user.email}`);
+        }
+
+        getCurrentUser() {
+          if (!this.currentUser) {
+            const stored = localStorage.getItem(this.sessionKey);
+            if (stored) {
+              this.currentUser = JSON.parse(stored);
+            }
+          }
+          return this.currentUser;
+        }
+
+        logout() {
+          this.currentUser = null;
+          localStorage.removeItem(this.sessionKey);
+        }
+
+        getUserKey(baseKey) {
+          const user = this.getCurrentUser();
+          if (!user) throw new Error("Aucun utilisateur connecté");
+          return `${this.globalPrefix}${user.userId}_${baseKey}`;
+        }
+
+        getInvoices() {
+          try {
+            const key = this.getUserKey("invoices");
+            const stored = localStorage.getItem(key);
+            return stored ? JSON.parse(stored) : [];
+          } catch (e) {
+            return [];
+          }
+        }
+
+        saveInvoice(invoice) {
+          try {
+            const invoices = this.getInvoices();
+            invoices.push(invoice);
+            const key = this.getUserKey("invoices");
+            localStorage.setItem(key, JSON.stringify(invoices));
+          } catch (e) {
+            console.error("Erreur sauvegarde facture:", e);
+          }
+        }
+
+        getRecentTasks() {
+          try {
+            const key = this.getUserKey("recent_tasks");
+            const stored = localStorage.getItem(key);
+            return stored ? JSON.parse(stored) : [];
+          } catch (e) {
+            return [];
+          }
+        }
+
+        addRecentTask(task) {
+          try {
+            const tasks = this.getRecentTasks();
+            tasks.unshift(task);
+            const key = this.getUserKey("recent_tasks");
+            localStorage.setItem(key, JSON.stringify(tasks.slice(0, 10)));
+          } catch (e) {
+            console.error("Erreur sauvegarde tâche:", e);
+          }
+        }
+
+        getClients() {
+          try {
+            const key = this.getUserKey("clients");
+            const stored = localStorage.getItem(key);
+            return stored ? JSON.parse(stored) : [];
+          } catch (e) {
+            return [];
+          }
+        }
+
+        saveClient(client) {
+          try {
+            const clients = this.getClients();
+            clients.push(client);
+            const key = this.getUserKey("clients");
+            localStorage.setItem(key, JSON.stringify(clients));
+          } catch (e) {
+            console.error("Erreur sauvegarde client:", e);
+          }
+        }
+      }
+
+      const testStorage = new TestIsolatedStorage();
+
+      // Fonctions de simulation des utilisateurs
+      function simulateUser1() {
+        testStorage.setCurrentUser({
+          userId: "user-test-1",
+          email: "jean.dupont@test.com",
+          name: "Jean Dupont",
+          isActive: true,
+        });
+        updateCurrentUserDisplay();
+        showDataUser1();
+      }
+
+      function simulateUser2() {
+        testStorage.setCurrentUser({
+          userId: "user-test-2",
+          email: "marie.martin@test.com",
+          name: "Marie Martin",
+          isActive: true,
+        });
+        updateCurrentUserDisplay();
+        showDataUser2();
+      }
+
+      function clearCurrentSession() {
+        testStorage.logout();
+        updateCurrentUserDisplay();
+      }
+
+      function updateCurrentUserDisplay() {
+        const user = testStorage.getCurrentUser();
+        const display = document.getElementById("currentUserInfo");
+        if (user) {
+          display.innerHTML = `
+                    <strong>👤 ${user.name}</strong><br>
+                    📧 ${user.email}<br>
+                    🆔 ${user.userId}
+                `;
+        } else {
+          display.innerHTML = "Aucun utilisateur connecté";
+        }
+      }
+
+      // Ajouter des données de test
+      function addDataUser1() {
+        simulateUser1();
+
+        // Ajouter une facture
+        testStorage.saveInvoice({
+          id: `invoice-${Date.now()}`,
+          number: `FACT-JEAN-${Math.floor(Math.random() * 1000)}`,
+          client: "Client Jean",
+          amount: "1500.00",
+          status: "draft",
+          date: new Date().toISOString(),
+        });
+
+        // Ajouter une tâche
+        testStorage.addRecentTask({
+          id: `task-${Date.now()}`,
+          type: "invoice_created",
+          title: "Facture créée par Jean",
+          description: "Nouvelle facture pour Jean Dupont",
+          date: new Date().toISOString(),
+          icon: "📄",
+        });
+
+        // Ajouter un client
+        testStorage.saveClient({
+          id: `client-${Date.now()}`,
+          name: "Client de Jean",
+          email: "client.jean@test.com",
+          address: "123 Rue de Jean",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+
+        showDataUser1();
+      }
+
+      function addDataUser2() {
+        simulateUser2();
+
+        // Ajouter une facture
+        testStorage.saveInvoice({
+          id: `invoice-${Date.now()}`,
+          number: `FACT-MARIE-${Math.floor(Math.random() * 1000)}`,
+          client: "Client Marie",
+          amount: "2500.00",
+          status: "sent",
+          date: new Date().toISOString(),
+        });
+
+        // Ajouter une tâche
+        testStorage.addRecentTask({
+          id: `task-${Date.now()}`,
+          type: "payment_received",
+          title: "Paiement reçu par Marie",
+          description: "Paiement reçu pour Marie Martin",
+          date: new Date().toISOString(),
+          icon: "💰",
+        });
+
+        // Ajouter un client
+        testStorage.saveClient({
+          id: `client-${Date.now()}`,
+          name: "Client de Marie",
+          email: "client.marie@test.com",
+          address: "456 Avenue de Marie",
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        });
+
+        showDataUser2();
+      }
+
+      // Afficher les données
+      function showDataUser1() {
+        simulateUser1();
+        const invoices = testStorage.getInvoices();
+        const tasks = testStorage.getRecentTasks();
+        const clients = testStorage.getClients();
+
+        document.getElementById("invoicesUser1").textContent = invoices.length;
+        document.getElementById("tasksUser1").textContent = tasks.length;
+        document.getElementById("clientsUser1").textContent = clients.length;
+
+        document.getElementById("dataUser1").innerHTML = `
+                <strong>📄 Factures (${invoices.length}):</strong><br>
+                ${
+                  invoices
+                    .map((inv) => `• ${inv.number} - ${inv.amount}€`)
+                    .join("<br>") || "Aucune facture"
+                }<br><br>
+                <strong>📋 Tâches (${tasks.length}):</strong><br>
+                ${
+                  tasks.map((task) => `• ${task.title}`).join("<br>") ||
+                  "Aucune tâche"
+                }<br><br>
+                <strong>👤 Clients (${clients.length}):</strong><br>
+                ${
+                  clients.map((client) => `• ${client.name}`).join("<br>") ||
+                  "Aucun client"
+                }
+            `;
+      }
+
+      function showDataUser2() {
+        simulateUser2();
+        const invoices = testStorage.getInvoices();
+        const tasks = testStorage.getRecentTasks();
+        const clients = testStorage.getClients();
+
+        document.getElementById("invoicesUser2").textContent = invoices.length;
+        document.getElementById("tasksUser2").textContent = tasks.length;
+        document.getElementById("clientsUser2").textContent = clients.length;
+
+        document.getElementById("dataUser2").innerHTML = `
+                <strong>📄 Factures (${invoices.length}):</strong><br>
+                ${
+                  invoices
+                    .map((inv) => `• ${inv.number} - ${inv.amount}€`)
+                    .join("<br>") || "Aucune facture"
+                }<br><br>
+                <strong>📋 Tâches (${tasks.length}):</strong><br>
+                ${
+                  tasks.map((task) => `• ${task.title}`).join("<br>") ||
+                  "Aucune tâche"
+                }<br><br>
+                <strong>👤 Clients (${clients.length}):</strong><br>
+                ${
+                  clients.map((client) => `• ${client.name}`).join("<br>") ||
+                  "Aucun client"
+                }
+            `;
+      }
+
+      // Afficher toutes les clés localStorage
+      function showAllStorageKeys() {
+        const keys = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && key.includes("facturly")) {
+            const value = localStorage.getItem(key);
+            keys.push(`<strong>${key}:</strong> ${value.length} caractères`);
+          }
+        }
+
+        document.getElementById("allKeysDisplay").innerHTML =
+          keys.length > 0 ? keys.join("<br>") : "Aucune clé Facturly trouvée";
+      }
+
+      // Test d'isolation complet
+      function testIsolation() {
+        const results = [];
+
+        // Test 1: Ajouter des données pour l'utilisateur 1
+        addDataUser1();
+        const user1Data = {
+          invoices: testStorage.getInvoices().length,
+          tasks: testStorage.getRecentTasks().length,
+          clients: testStorage.getClients().length,
+        };
+
+        // Test 2: Changer d'utilisateur et vérifier l'isolation
+        addDataUser2();
+        const user2Data = {
+          invoices: testStorage.getInvoices().length,
+          tasks: testStorage.getRecentTasks().length,
+          clients: testStorage.getClients().length,
+        };
+
+        // Test 3: Revenir à l'utilisateur 1 et vérifier que ses données sont toujours là
+        simulateUser1();
+        const user1DataAfter = {
+          invoices: testStorage.getInvoices().length,
+          tasks: testStorage.getRecentTasks().length,
+          clients: testStorage.getClients().length,
+        };
+
+        // Analyser les résultats
+        const isolationWorking =
+          user1Data.invoices > 0 &&
+          user2Data.invoices > 0 &&
+          user1Data.invoices === user1DataAfter.invoices &&
+          user1Data.tasks === user1DataAfter.tasks &&
+          user1Data.clients === user1DataAfter.clients;
+
+        const resultHtml = `
+                <div class="${isolationWorking ? "success-msg" : "warning"}">
+                    <h3>${
+                      isolationWorking
+                        ? "✅ Test d'isolation RÉUSSI"
+                        : "❌ Test d'isolation ÉCHOUÉ"
+                    }</h3>
+                    
+                    <strong>📊 Résultats détaillés :</strong><br>
+                    <strong>👨‍💼 Jean (User 1) :</strong> ${
+                      user1Data.invoices
+                    } factures, ${user1Data.tasks} tâches, ${
+          user1Data.clients
+        } clients<br>
+                    <strong>👩‍💼 Marie (User 2) :</strong> ${
+                      user2Data.invoices
+                    } factures, ${user2Data.tasks} tâches, ${
+          user2Data.clients
+        } clients<br>
+                    <strong>👨‍💼 Jean (après retour) :</strong> ${
+                      user1DataAfter.invoices
+                    } factures, ${user1DataAfter.tasks} tâches, ${
+          user1DataAfter.clients
+        } clients<br><br>
+                    
+                    ${
+                      isolationWorking
+                        ? "<strong>🎉 L'isolation fonctionne parfaitement ! Chaque utilisateur a ses propres données.</strong>"
+                        : "<strong>⚠️ Problème détecté : Les données ne sont pas correctement isolées.</strong>"
+                    }
+                </div>
+            `;
+
+        document.getElementById("testResults").innerHTML = resultHtml;
+        showAllStorageKeys();
+      }
+
+      // Nettoyer toutes les données de test
+      function clearAllTestData() {
+        if (confirm("Supprimer toutes les données de test ?")) {
+          const keysToRemove = [];
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (key && key.includes("facturly")) {
+              keysToRemove.push(key);
+            }
+          }
+
+          keysToRemove.forEach((key) => localStorage.removeItem(key));
+
+          testStorage.logout();
+          updateCurrentUserDisplay();
+
+          document.getElementById("dataUser1").innerHTML = "Aucune donnée";
+          document.getElementById("dataUser2").innerHTML = "Aucune donnée";
+          document.getElementById("allKeysDisplay").innerHTML =
+            "Toutes les données supprimées";
+          document.getElementById("testResults").innerHTML =
+            "Données nettoyées";
+
+          // Reset stats
+          [
+            "invoicesUser1",
+            "tasksUser1",
+            "clientsUser1",
+            "invoicesUser2",
+            "tasksUser2",
+            "clientsUser2",
+          ].forEach((id) => {
+            document.getElementById(id).textContent = "0";
+          });
+        }
+      }
+
+      // Initialisation
+      updateCurrentUserDisplay();
+    </script>
+  </body>
+</html>

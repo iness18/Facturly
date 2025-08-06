@@ -14,8 +14,8 @@ Facturly est une application de facturation moderne conçue pour simplifier la g
 ## Stack technique
 
 - **Frontend**: Next.js 15, React 19, TypeScript, Tailwind CSS, shadcn/ui
-- **Backend**: NestJS, TypeScript, Prisma ORM
-- **Base de données**: PostgreSQL
+- **Backend**: NestJS, TypeScript, Mongoose ODM
+- **Base de données**: MongoDB
 - **Infrastructure**: Docker, Docker Compose
 
 ## Architecture
@@ -23,7 +23,7 @@ Facturly est une application de facturation moderne conçue pour simplifier la g
 - Architecture microservices avec séparation frontend/backend
 - API REST avec NestJS
 - Interface utilisateur moderne avec Next.js
-- Base de données relationnelle PostgreSQL
+- Base de données NoSQL MongoDB
 
 ## Contraintes
 

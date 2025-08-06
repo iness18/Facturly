@@ -17,14 +17,14 @@
 - **Framework**: NestJS 11.0.1
 - **Runtime**: Node.js
 - **Language**: TypeScript 5.7.3
-- **ORM**: Prisma 6.12.0
-- **Database**: PostgreSQL 15-alpine
+- **ODM**: Mongoose 8.17.0
+- **Database**: MongoDB 7.0
 - **Testing**: Jest 29.7.0
 
 ### DevOps & Infrastructure
 
 - **Containerization**: Docker + Docker Compose
-- **Database**: PostgreSQL avec volumes persistants
+- **Database**: MongoDB avec volumes persistants
 - **Development**: Hot reload activé
 - **Linting**: ESLint 9.18.0 + Prettier 3.4.2
 
@@ -34,15 +34,16 @@
 
 - Frontend: 3000
 - Backend: 3001 (mappé depuis 3000 interne)
-- Database: 5432
+- Database: 27017
+- Mongo Express: 8081
 
 ### Variables d'environnement
 
 ```env
-POSTGRES_USER=facturly_user
-POSTGRES_PASSWORD=supersecretpassword
-POSTGRES_DB=facturly_db
-DATABASE_URL=postgresql://...
+MONGO_USERNAME=facturly_admin
+MONGO_PASSWORD=supersecretpassword
+MONGO_DATABASE=facturly_db
+MONGODB_URI=mongodb://...
 NEXT_PUBLIC_API_URL=http://localhost:3001
 ```
 
@@ -55,7 +56,8 @@ NEXT_PUBLIC_API_URL=http://localhost:3001
   "@nestjs/common": "^11.0.1",
   "@nestjs/core": "^11.0.1",
   "@nestjs/platform-express": "^11.0.1",
-  "@prisma/client": "^6.12.0",
+  "@nestjs/mongoose": "^11.0.3",
+  "mongoose": "^8.17.0",
   "reflect-metadata": "^0.2.2",
   "rxjs": "^7.8.1"
 }
@@ -86,7 +88,7 @@ NEXT_PUBLIC_API_URL=http://localhost:3001
 ### Compatibilité
 
 - Node.js version moderne requise
-- PostgreSQL 15+ pour les fonctionnalités avancées
+- MongoDB 7.0+ pour les fonctionnalités avancées
 - Navigateurs modernes (ES2020+)
 
 ## Outils de développement
@@ -127,6 +129,7 @@ NEXT_PUBLIC_API_URL=http://localhost:3001
 - Dependency injection
 - Décorateurs TypeScript
 - Configuration ESLint moderne
+- Mongoose ODM intégré
 
 ## Améliorations techniques recommandées
 
@@ -140,7 +143,7 @@ NEXT_PUBLIC_API_URL=http://localhost:3001
 ### Performance
 
 - Cache Redis
-- Optimisation des requêtes Prisma
+- Optimisation des requêtes MongoDB
 - Compression des assets
 - CDN pour les ressources statiques
 

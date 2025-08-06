@@ -8,50 +8,52 @@ import {
   Delete,
   Query,
   Request,
+  UseGuards,
 } from '@nestjs/common';
-import { ClientsService } from './clients.service';
-import { CreateClientDto } from './dto/create-client.dto';
-import { UpdateClientDto } from './dto/update-client.dto';
+import { ClientsMongoService } from './clients-mongo.service';
+import { CreateClientMongoDto } from './dto/create-client-mongo.dto';
+import { UpdateClientMongoDto } from './dto/update-client-mongo.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('clients')
+@UseGuards(JwtAuthGuard)
 export class ClientsController {
-  constructor(private readonly clientsService: ClientsService) {}
+  constructor(private readonly clientsService: ClientsMongoService) {}
 
   // Créer un nouveau client
   @Post()
-  async create(@Request() req: any, @Body() createClientDto: CreateClientDto) {
-    // TODO: Récupérer l'ID utilisateur depuis le token JWT
-    const userId = 'temp-user-id';
-    return this.clientsService.create(userId, createClientDto);
+  async create(
+    @Request() req: any,
+    @Body() createClientDto: CreateClientMongoDto,
+  ) {
+    return this.clientsService.create(req.user.userId, createClientDto);
   }
 
   // Obtenir tous les clients de l'utilisateur
   @Get()
   async findAll(@Request() req: any, @Query('search') search?: string) {
-    // TODO: Récupérer l'ID utilisateur depuis le token JWT
-    const userId = 'temp-user-id';
-
     if (search) {
-      return this.clientsService.search(userId, search);
+      return this.clientsService.search(req.user.userId, search);
     }
 
-    return this.clientsService.findAll(userId);
+    return this.clientsService.findByUserId(req.user.userId);
   }
 
   // Obtenir un client par ID
   @Get(':id')
   async findOne(@Request() req: any, @Param('id') id: string) {
-    // TODO: Récupérer l'ID utilisateur depuis le token JWT
-    const userId = 'temp-user-id';
-    return this.clientsService.findOne(userId, id);
+    return this.clientsService.findByIdAndUserId(id, req.user.userId);
   }
 
   // Obtenir les statistiques d'un client
   @Get(':id/stats')
   async getStats(@Request() req: any, @Param('id') id: string) {
-    // TODO: Récupérer l'ID utilisateur depuis le token JWT
-    const userId = 'temp-user-id';
-    return this.clientsService.getClientStats(userId, id);
+    // TODO: Implémenter les statistiques client avec MongoDB
+    const client = await this.clientsService.findByIdAndUserId(
+      id,
+      req.user.userId,
+    );
+    return { client, stats: { invoiceCount: 0, totalAmount: 0 } };
   }
 
   // Mettre à jour un client
@@ -59,18 +61,14 @@ export class ClientsController {
   async update(
     @Request() req: any,
     @Param('id') id: string,
-    @Body() updateClientDto: UpdateClientDto,
+    @Body() updateClientDto: UpdateClientMongoDto,
   ) {
-    // TODO: Récupérer l'ID utilisateur depuis le token JWT
-    const userId = 'temp-user-id';
-    return this.clientsService.update(userId, id, updateClientDto);
+    return this.clientsService.update(id, req.user.userId, updateClientDto);
   }
 
   // Supprimer un client
   @Delete(':id')
   async remove(@Request() req: any, @Param('id') id: string) {
-    // TODO: Récupérer l'ID utilisateur depuis le token JWT
-    const userId = 'temp-user-id';
-    return this.clientsService.remove(userId, id);
+    return this.clientsService.delete(id, req.user.userId);
   }
 }

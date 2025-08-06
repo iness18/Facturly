@@ -146,19 +146,59 @@ class StorageService {
     try {
       const tasks = this.getRecentTasks();
 
-      // Vérifier s'il existe déjà une tâche similaire récente (même type et description)
-      const existingTaskIndex = tasks.findIndex(
-        (existingTask) =>
-          existingTask.type === task.type &&
-          existingTask.description === task.description
-      );
+      // Logique de déduplication améliorée
+      let shouldAdd = true;
 
-      // Si une tâche similaire existe, la supprimer pour éviter les doublons
-      if (existingTaskIndex >= 0) {
-        tasks.splice(existingTaskIndex, 1);
+      if (task.type === "invoice_created") {
+        // Pour les factures, extraire le numéro de facture de la description
+        const invoiceNumberMatch = task.description.match(/Facture ([^\s]+)/);
+        if (invoiceNumberMatch) {
+          const invoiceNumber = invoiceNumberMatch[1];
+          // Vérifier s'il existe déjà une tâche pour cette facture
+          const existingTaskIndex = tasks.findIndex(
+            (existingTask) =>
+              existingTask.type === "invoice_created" &&
+              existingTask.description.includes(`Facture ${invoiceNumber}`)
+          );
+
+          if (existingTaskIndex >= 0) {
+            // Remplacer l'ancienne tâche par la nouvelle (mise à jour)
+            tasks.splice(existingTaskIndex, 1);
+          }
+        }
+      } else if (task.type === "client_added") {
+        // Pour les clients, extraire le nom du client
+        const clientNameMatch = task.description.match(/Client ([^]+) ajouté/);
+        if (clientNameMatch) {
+          const clientName = clientNameMatch[1];
+          // Vérifier s'il existe déjà une tâche pour ce client
+          const existingTaskIndex = tasks.findIndex(
+            (existingTask) =>
+              existingTask.type === "client_added" &&
+              existingTask.description.includes(`Client ${clientName}`)
+          );
+
+          if (existingTaskIndex >= 0) {
+            // Ne pas ajouter de doublon pour le même client
+            shouldAdd = false;
+          }
+        }
+      } else {
+        // Pour les autres types, vérifier la description exacte
+        const existingTaskIndex = tasks.findIndex(
+          (existingTask) =>
+            existingTask.type === task.type &&
+            existingTask.description === task.description
+        );
+
+        if (existingTaskIndex >= 0) {
+          tasks.splice(existingTaskIndex, 1);
+        }
       }
 
-      tasks.unshift(task); // Ajouter au début
+      if (shouldAdd) {
+        tasks.unshift(task); // Ajouter au début
+      }
 
       // Garder seulement les 20 tâches les plus récentes
       const limitedTasks = tasks.slice(0, 20);
@@ -236,10 +276,69 @@ class StorageService {
     }
   }
 
+  // Nettoyer les doublons de tâches récentes
+  cleanupDuplicateTasks(): void {
+    if (typeof window === "undefined") return;
+
+    try {
+      const tasks = this.getRecentTasks();
+      const cleanedTasks: RecentTask[] = [];
+      const seenInvoices = new Set<string>();
+      const seenClients = new Set<string>();
+
+      for (const task of tasks) {
+        let shouldKeep = true;
+
+        if (task.type === "invoice_created") {
+          // Extraire le numéro de facture
+          const invoiceNumberMatch = task.description.match(/Facture ([^\s]+)/);
+          if (invoiceNumberMatch) {
+            const invoiceNumber = invoiceNumberMatch[1];
+            if (seenInvoices.has(invoiceNumber)) {
+              shouldKeep = false; // Doublon détecté
+            } else {
+              seenInvoices.add(invoiceNumber);
+            }
+          }
+        } else if (task.type === "client_added") {
+          // Extraire le nom du client
+          const clientNameMatch =
+            task.description.match(/Client ([^]+) ajouté/);
+          if (clientNameMatch) {
+            const clientName = clientNameMatch[1];
+            if (seenClients.has(clientName)) {
+              shouldKeep = false; // Doublon détecté
+            } else {
+              seenClients.add(clientName);
+            }
+          }
+        }
+
+        if (shouldKeep) {
+          cleanedTasks.push(task);
+        }
+      }
+
+      // Sauvegarder les tâches nettoyées
+      localStorage.setItem(this.RECENT_TASKS_KEY, JSON.stringify(cleanedTasks));
+
+      const removedCount = tasks.length - cleanedTasks.length;
+      if (removedCount > 0) {
+        console.log(
+          `🧹 Nettoyage des tâches récentes: ${removedCount} doublons supprimés`
+        );
+      }
+    } catch (error) {
+      console.error("Erreur lors du nettoyage des doublons:", error);
+    }
+  }
+
   // Initialiser le service (à appeler au démarrage de l'app)
   initialize(): void {
     if (typeof window === "undefined") return;
 
+    // Nettoyer les doublons au démarrage
+    this.cleanupDuplicateTasks();
     // Nettoyer les tâches orphelines au démarrage
     this.cleanupOrphanedTasks();
   }
