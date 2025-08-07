@@ -144,6 +144,9 @@ export default function Navigation({ currentPage = "" }: NavigationProps) {
             border: "none",
             color: "#ffffff",
             cursor: "pointer",
+            fontSize: "36px",
+            padding: "12px",
+            lineHeight: "1",
           }}
           onClick={() => setIsMenuOpen(!isMenuOpen)}
         >
