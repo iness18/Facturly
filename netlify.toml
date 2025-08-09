@@ -1,12 +1,12 @@
 [build]
-  # Commande de build pour le monorepo
-  command = "npm install && npm run build:frontend && npm run build:backend"
+  # Répertoire de base pour le build
+  base = "frontend/"
   
-  # Répertoire de publication (frontend)
-  publish = "frontend/out"
+  # Commande de build simple
+  command = "npm install && npm run build"
   
-  # Répertoire des fonctions serverless (backend)
-  functions = "netlify/functions"
+  # Répertoire de publication
+  publish = "out"
 
 [build.environment]
   # Version de Node.js
@@ -14,17 +14,7 @@
   
   # Variables d'environnement pour le build
   NEXT_TELEMETRY_DISABLED = "1"
-
-# Configuration pour les fonctions serverless
-[functions]
-  directory = "netlify/functions"
-  node_bundler = "esbuild"
-
-# Redirections pour l'API backend
-[[redirects]]
-  from = "/api/*"
-  to = "/.netlify/functions/:splat"
-  status = 200
+  NEXT_PUBLIC_API_URL = "https://factur-ly.com/api"
 
 # Redirections pour les routes dynamiques Next.js
 [[redirects]]

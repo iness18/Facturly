@@ -29,15 +29,16 @@ const nextConfig = {
   },
 
   async rewrites() {
-    // Rediriger les appels API vers les fonctions Netlify en production
-    if (process.env.NODE_ENV === "production") {
+    // En développement, rediriger vers le backend local
+    if (process.env.NODE_ENV !== "production") {
       return [
         {
           source: "/api/:path*",
-          destination: "/.netlify/functions/api/:path*",
+          destination: "http://localhost:3001/:path*",
         },
       ];
     }
+    // En production, pas de rewrite - utiliser une API externe
     return [];
   },
 
