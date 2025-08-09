@@ -29,15 +29,12 @@ const nextConfig = {
   },
 
   async rewrites() {
-    // Rediriger les appels API vers le backend Heroku en production
+    // Rediriger les appels API vers les fonctions Netlify en production
     if (process.env.NODE_ENV === "production") {
       return [
         {
           source: "/api/:path*",
-          destination: `${
-            process.env.NEXT_PUBLIC_API_URL ||
-            "https://votre-backend-heroku.herokuapp.com"
-          }/api/:path*`,
+          destination: "/.netlify/functions/api/:path*",
         },
       ];
     }

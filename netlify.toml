@@ -1,12 +1,12 @@
 [build]
-  # Répertoire de base pour le build
-  base = "frontend/"
+  # Commande de build pour le monorepo
+  command = "npm install && npm run build:frontend && npm run build:backend"
   
-  # Commande de build
-  command = "npm install && npm run build"
+  # Répertoire de publication (frontend)
+  publish = "frontend/out"
   
-  # Répertoire de publication
-  publish = ".next"
+  # Répertoire des fonctions serverless (backend)
+  functions = "netlify/functions"
 
 [build.environment]
   # Version de Node.js
@@ -15,13 +15,19 @@
   # Variables d'environnement pour le build
   NEXT_TELEMETRY_DISABLED = "1"
 
-# Configuration pour les fonctions serverless (si nécessaire)
+# Configuration pour les fonctions serverless
 [functions]
-  directory = "frontend/netlify/functions"
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
 
-# Redirections et rewrites
+# Redirections pour l'API backend
 [[redirects]]
-  # Redirection pour les routes dynamiques Next.js
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+# Redirections pour les routes dynamiques Next.js
+[[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
@@ -52,9 +58,3 @@
   for = "/_next/static/*"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
-
-# Configuration pour le développement local
-[dev]
-  command = "npm run dev"
-  port = 3000
-  publish = "frontend/.next"

@@ -1,8 +1,8 @@
 # Redirections pour Next.js sur Netlify
 # Toutes les routes non-statiques sont redirigées vers index.html pour le routing côté client
 
-# API routes - rediriger vers le backend Heroku
-/api/* https://votre-backend-heroku.herokuapp.com/api/:splat 200
+# API routes - rediriger vers les fonctions Netlify
+/api/* /.netlify/functions/api/:splat 200
 
 # Pages dynamiques Next.js
 /dashboard/* /index.html 200
