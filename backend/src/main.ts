@@ -35,11 +35,23 @@ async function bootstrap() {
 
     // 🔄 ÉTAPE 5: Démarrage du serveur
     const port = process.env.PORT || 3001;
-    await app.listen(port);
 
-    logger.log(`🚀 Backend Facturly démarré sur: http://localhost:${port}`);
-    logger.log(`📡 API Admin disponible sur: http://localhost:${port}/admin`);
-    logger.log(`🗄️ Base de données synchronisée et prête`);
+    // Configuration spécifique pour Heroku
+    if (process.env.NODE_ENV === 'production') {
+      await app.listen(port, '0.0.0.0');
+      logger.log(
+        `🚀 Backend Facturly démarré en PRODUCTION sur le port: ${port}`,
+      );
+    } else {
+      await app.listen(port);
+      logger.log(
+        `🚀 Backend Facturly démarré en DÉVELOPPEMENT sur: http://localhost:${port}`,
+      );
+    }
+
+    logger.log(`📡 API disponible sur le port: ${port}`);
+    logger.log(`🗄️ Base de données MongoDB connectée`);
+    logger.log(`🌍 Environnement: ${process.env.NODE_ENV || 'development'}`);
   } catch (error) {
     logger.error(
       "❌ Erreur lors du démarrage de l'application:",

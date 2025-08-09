@@ -1,21 +1,25 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Configuration pour Netlify (pas d'export statique pour garder les fonctionnalités dynamiques)
-  // output: 'export',
+  // Configuration pour Netlify - mode standalone pour optimiser les performances
+  output: process.env.NODE_ENV === "production" ? "standalone" : undefined,
 
   // Configuration des images pour Netlify
   images: {
     unoptimized: true,
     domains: ["localhost"],
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "**",
+      },
+    ],
   },
-
-  // Configuration du chemin de base (si nécessaire)
-  // basePath: '',
 
   // Configuration pour les assets
   assetPrefix: "",
 
-  // Note: telemetry est désactivé par défaut dans Next.js 15
+  // Désactiver la télémétrie
+  telemetry: false,
 
   // Configuration pour les redirections et rewrites
   async redirects() {
@@ -23,10 +27,22 @@ const nextConfig = {
   },
 
   async rewrites() {
+    // Rediriger les appels API vers le backend Heroku en production
+    if (process.env.NODE_ENV === "production") {
+      return [
+        {
+          source: "/api/:path*",
+          destination: `${
+            process.env.NEXT_PUBLIC_API_URL ||
+            "https://votre-backend-heroku.herokuapp.com"
+          }/api/:path*`,
+        },
+      ];
+    }
     return [];
   },
 
-  // Configuration pour les headers
+  // Configuration pour les headers de sécurité
   async headers() {
     return [
       {
@@ -44,6 +60,31 @@ const nextConfig = {
             key: "Referrer-Policy",
             value: "strict-origin-when-cross-origin",
           },
+          {
+            key: "X-XSS-Protection",
+            value: "1; mode=block",
+          },
+          {
+            key: "Permissions-Policy",
+            value: "camera=(), microphone=(), geolocation=()",
+          },
+        ],
+      },
+      {
+        source: "/api/:path*",
+        headers: [
+          {
+            key: "Access-Control-Allow-Origin",
+            value: "*",
+          },
+          {
+            key: "Access-Control-Allow-Methods",
+            value: "GET, POST, PUT, DELETE, OPTIONS",
+          },
+          {
+            key: "Access-Control-Allow-Headers",
+            value: "Content-Type, Authorization",
+          },
         ],
       },
     ];
@@ -51,22 +92,47 @@ const nextConfig = {
 
   // Configuration pour les variables d'environnement
   env: {
-    CUSTOM_KEY: process.env.CUSTOM_KEY,
+    NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+    NEXT_PUBLIC_APP_ENV: process.env.NODE_ENV,
   },
 
-  // Configuration pour webpack (si nécessaire)
+  // Configuration pour webpack
   webpack: (config, { buildId, dev, isServer, defaultLoaders, webpack }) => {
-    // Optimisations webpack personnalisées si nécessaire
+    // Optimisations pour la production
+    if (!dev && !isServer) {
+      config.optimization.splitChunks.chunks = "all";
+    }
+
+    // Résoudre les problèmes de modules
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      fs: false,
+      net: false,
+      tls: false,
+    };
+
     return config;
   },
 
-  // Désactiver les vérifications TypeScript et ESLint pendant le build pour Netlify
+  // Configuration pour TypeScript et ESLint
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: process.env.NODE_ENV === "production",
   },
   eslint: {
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: process.env.NODE_ENV === "production",
   },
+
+  // Configuration expérimentale pour les performances
+  experimental: {
+    optimizeCss: true,
+    optimizePackageImports: ["lucide-react"],
+  },
+
+  // Configuration pour la compression
+  compress: true,
+
+  // Configuration pour les pages statiques
+  trailingSlash: false,
 };
 
 module.exports = nextConfig;

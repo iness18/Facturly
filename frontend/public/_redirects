@@ -1,8 +1,17 @@
-# Redirections pour Next.js App Router sur Netlify
+# Redirections pour Next.js sur Netlify
+# Toutes les routes non-statiques sont redirigées vers index.html pour le routing côté client
 
-# Redirection pour les routes dynamiques du dashboard
-/dashboard/* /dashboard/index.html 200
-/dashboard/factures/edit/* /dashboard/factures/edit/[id]/index.html 200
+# API routes - rediriger vers le backend Heroku
+/api/* https://votre-backend-heroku.herokuapp.com/api/:splat 200
 
-# Redirection générale pour toutes les autres routes (SPA fallback)
+# Pages dynamiques Next.js
+/dashboard/* /index.html 200
+/admin/* /index.html 200
+/connexion /index.html 200
+/inscription /index.html 200
+/contact /index.html 200
+/fonctionnalites /index.html 200
+/demo /index.html 200
+
+# Fallback pour toutes les autres routes
 /* /index.html 200

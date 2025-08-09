@@ -1,0 +1,62 @@
+{
+  "name": "Facturly Backend",
+  "description": "Backend API pour l'application de facturation Facturly",
+  "repository": "https://github.com/votre-username/facturly",
+  "logo": "https://facturly.com/logo.png",
+  "keywords": ["nestjs", "mongodb", "api", "facturation"],
+  "image": "heroku/nodejs",
+  "stack": "heroku-22",
+  "buildpacks": [
+    {
+      "url": "heroku/nodejs"
+    }
+  ],
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "basic"
+    }
+  },
+  "addons": [
+    {
+      "plan": "mongolab:sandbox",
+      "as": "MONGODB"
+    }
+  ],
+  "env": {
+    "NODE_ENV": {
+      "description": "Environment de l'application",
+      "value": "production"
+    },
+    "JWT_SECRET": {
+      "description": "Secret pour les tokens JWT",
+      "generator": "secret"
+    },
+    "MONGODB_URI": {
+      "description": "URI de connexion MongoDB (fournie par l'addon)",
+      "required": true
+    },
+    "FRONTEND_URL": {
+      "description": "URL du frontend Netlify",
+      "value": "https://votre-app.netlify.app"
+    },
+    "PORT": {
+      "description": "Port du serveur (défini automatiquement par Heroku)",
+      "value": "3001"
+    }
+  },
+  "scripts": {
+    "postdeploy": "npm run build"
+  },
+  "environments": {
+    "test": {
+      "addons": ["mongolab:sandbox"],
+      "env": {
+        "NODE_ENV": "test"
+      },
+      "scripts": {
+        "test": "npm test"
+      }
+    }
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "development": {
+    "name": "Développement Local",
+    "frontend": {
+      "url": "http://localhost:3000",
+      "build_command": "npm run dev",
+      "env": {
+        "NODE_ENV": "development",
+        "NEXT_PUBLIC_API_URL": "http://localhost:3001"
+      }
+    },
+    "backend": {
+      "url": "http://localhost:3001",
+      "start_command": "npm run start:dev",
+      "env": {
+        "NODE_ENV": "development",
+        "MONGODB_URI": "mongodb://facturly_user:F4ctur1y_M0ng0_P4ssw0rd_2025@localhost:27017/facturly_db?authSource=facturly_db",
+        "FRONTEND_URL": "http://localhost:3000"
+      }
+    }
+  },
+  "staging": {
+    "name": "Staging",
+    "frontend": {
+      "url": "https://staging--facturly.netlify.app",
+      "netlify_site_id": "VOTRE_STAGING_SITE_ID",
+      "env": {
+        "NODE_ENV": "staging",
+        "NEXT_PUBLIC_API_URL": "https://facturly-backend-staging.herokuapp.com"
+      }
+    },
+    "backend": {
+      "url": "https://facturly-backend-staging.herokuapp.com",
+      "heroku_app": "facturly-backend-staging",
+      "env": {
+        "NODE_ENV": "staging",
+        "FRONTEND_URL": "https://staging--facturly.netlify.app"
+      }
+    }
+  },
+  "production": {
+    "name": "Production",
+    "frontend": {
+      "url": "https://facturly.netlify.app",
+      "netlify_site_id": "VOTRE_PRODUCTION_SITE_ID",
+      "env": {
+        "NODE_ENV": "production",
+        "NEXT_PUBLIC_API_URL": "https://facturly-backend-prod.herokuapp.com"
+      }
+    },
+    "backend": {
+      "url": "https://facturly-backend-prod.herokuapp.com",
+      "heroku_app": "facturly-backend-prod",
+      "env": {
+        "NODE_ENV": "production",
+        "FRONTEND_URL": "https://facturly.netlify.app"
+      }
+    }
+  }
+}
