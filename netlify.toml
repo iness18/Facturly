@@ -3,10 +3,10 @@
   base = "frontend/"
   
   # Commande de build
-  command = "npm run build"
+  command = "npm install && npm run build"
   
   # Répertoire de publication
-  publish = "frontend/.next"
+  publish = ".next"
 
 [build.environment]
   # Version de Node.js

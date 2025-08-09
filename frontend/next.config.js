@@ -1,7 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Configuration pour Netlify - mode standalone pour optimiser les performances
-  output: process.env.NODE_ENV === "production" ? "standalone" : undefined,
+  // Configuration pour Netlify - export statique pour compatibilité
+  output: process.env.NODE_ENV === "production" ? "export" : undefined,
+  trailingSlash: true,
+  distDir: ".next",
 
   // Configuration des images pour Netlify
   images: {

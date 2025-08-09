@@ -11,7 +11,7 @@
     "build:backend": "cd backend && npm run build",
     "build:frontend": "cd frontend && npm run build",
     "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
-    "start:backend": "cd backend && npm run start:prod",
+    "start:backend": "cd backend && npm install && npm run build && npm run start:prod",
     "start:frontend": "cd frontend && npm run start",
     "test": "npm run test:backend && npm run test:frontend",
     "test:backend": "cd backend && npm run test",
