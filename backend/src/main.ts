@@ -33,7 +33,25 @@ async function bootstrap() {
       }),
     );
 
-    // 🔄 ÉTAPE 5: Démarrage du serveur
+    // 🔄 ÉTAPE 5: Route de santé pour Railway
+    app.getHttpAdapter().get('/', (req, res) => {
+      res.json({
+        status: 'OK',
+        message: 'Facturly Backend is running',
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV || 'development',
+      });
+    });
+
+    app.getHttpAdapter().get('/health', (req, res) => {
+      res.json({
+        status: 'healthy',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime(),
+      });
+    });
+
+    // 🔄 ÉTAPE 6: Démarrage du serveur
     const port = process.env.PORT || 3001;
 
     // Configuration spécifique pour Heroku
